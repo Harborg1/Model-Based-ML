@@ -5,14 +5,14 @@
 
 # ## Imports
 
-# In[60]:
+# In[15]:
 
 
 # Uncomment the next line and run the cell to install Pyro for Jupyter Notebook:
 #!pip install pyro-ppl
 
 
-# In[ ]:
+# In[16]:
 
 
 import numpy as np
@@ -29,7 +29,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-# In[ ]:
+
+# In[17]:
 
 
 """Command to create a python file of the notebook (change path as needed):"""""
@@ -38,7 +39,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 # # Data: Description, Preprocessing, and Analysis
 
-# In[62]:
+# In[18]:
 
 
 # Loading the data and inspect the first rows
@@ -46,7 +47,7 @@ df = pd.read_csv('car_price_prediction.csv')
 df.head()
 
 
-# In[63]:
+# In[19]:
 
 
 # Inspect the dataset: we start with the shape of the dataset, columns, and types
@@ -55,14 +56,14 @@ print("Columns and Types:")
 print(df.dtypes)
 
 
-# In[64]:
+# In[20]:
 
 
 #check for duplications
 df.duplicated().sum()
 
 
-# In[65]:
+# In[21]:
 
 
 # we will drop duplications and check for missing values
@@ -70,7 +71,7 @@ df.drop_duplicates(inplace= True)
 df.isnull().sum()
 
 
-# In[ ]:
+# In[29]:
 
 
 # Number of columns per row in the plot grid
@@ -88,13 +89,13 @@ for i, col in enumerate(df.columns):
         df[col].astype(float)
         df[col].astype(float).plot(kind='hist', bins=30, ax=ax)
         ax.set_title(f"Histogram of {col}", fontsize=12)
-        
+
         
     except:
-        # For categorical data, show only the top 20 most frequent categories
+        # For categorical data, show only the top 10 most frequent categories
         vc = df[col].value_counts(dropna=False)
-        vc[:20].plot(kind='bar', ax=ax)
-        ax.set_title(f"Value counts of {col} (Top 20)" if df.nunique()[col]>=20 else f"Value counts of {col}" , fontsize=12)
+        vc[:10].plot(kind='bar', ax=ax)
+        ax.set_title(f"Histogram of {col} (Top 10)" if df.nunique()[col]>=10 else f"Histogram counts of {col}" , fontsize=12)
         ax.tick_params(axis='x', rotation=60)
 
     ax.set_xlabel('')
@@ -119,7 +120,7 @@ plt.show()
 df.nunique()
 
 
-# In[68]:
+# In[30]:
 
 
 # Drop irrelevant columns -4 columns
@@ -133,7 +134,7 @@ df_cleaned['Levy'] = pd.to_numeric(df_cleaned['Levy'], errors='coerce')
 df_cleaned['Leather interior'] = df_cleaned['Leather interior'].map({'Yes': 1, 'No': 0})
 
 
-# In[69]:
+# In[31]:
 
 
 #check the unique values and additional strings in engine volume
@@ -141,7 +142,7 @@ engine_volume_values = df_cleaned['Engine volume'].unique()
 sorted(engine_volume_values)
 
 
-# In[70]:
+# In[32]:
 
 
 # Create 'Turbo' binary column
@@ -151,7 +152,7 @@ df_cleaned['Turbo'] = df_cleaned['Engine volume'].str.contains('Turbo').astype(i
 df_cleaned['Engine volume'] = df_cleaned['Engine volume'].str.replace(' Turbo', '', regex=False).astype(float)
 
 
-# In[71]:
+# In[33]:
 
 
 #Drop 'Fuel type'
@@ -175,7 +176,7 @@ df_cleaned.head()
 print(df_cleaned.columns)
 
 
-# In[72]:
+# In[34]:
 
 
 # Number of columns per row in the plot grid
@@ -194,12 +195,11 @@ for i, col in enumerate(df_cleaned.columns):
         df_cleaned[col].astype(float)
         df_cleaned[col].astype(float).plot(kind='hist', bins=30, ax=ax)
         ax.set_title(f"Histogram of {col}")
-
     except:
         # For categorical data, show only the top 20 most frequent categories
         vc = df[col].value_counts(dropna=False)
-        vc[:20].plot(kind='bar', ax=ax)
-        ax.set_title(f"Value counts of {col} (Top 20)" if df_cleaned.nunique()[col]>=20 else f"Value counts of {col}" , fontsize=11)
+        vc[:10].plot(kind='bar', ax=ax)
+        ax.set_title(f"Histogram of {col} (Top 10)" if df_cleaned.nunique()[col]>=10 else f"Histogram of {col}" , fontsize=11)
         ax.tick_params(axis='x', rotation=60)
     ax.set_xlabel('')
     ax.set_ylabel('Count')
@@ -212,14 +212,14 @@ plt.tight_layout()
 plt.show()
 
 
-# In[73]:
+# In[35]:
 
 
 print("Descriptive Statistics:")
 df_cleaned.describe().T
 
 
-# In[74]:
+# In[36]:
 
 
 # Select only numerical columns
@@ -248,7 +248,7 @@ plt.show()
 
 # It looks like the data for the price and mileage, Levy and age, got some outliers the influence the distribution. We will inspect the prices further:
 
-# In[75]:
+# In[37]:
 
 
 print(df_cleaned['Price'].describe())
@@ -263,13 +263,13 @@ upper_bound = Q3 + 1.5 * IQR
 print("Upper bound:", upper_bound)
 
 
-# In[76]:
+# In[39]:
 
 
 print(f"Number of entries: {len(df_cleaned[df_cleaned['Price'] > 50000])}")
 
 
-# In[77]:
+# In[40]:
 
 
 print(f"Number of entries: {len(df_cleaned[df_cleaned['Price'] < 2000])}")
@@ -277,13 +277,13 @@ print(f"Number of entries: {len(df_cleaned[df_cleaned['Price'] < 2000])}")
 
 # There are 908 records of cars that their price is greater than 50,000. Also, 3,141 cars that are priced under 2,000. We will drop them, and plot the price distribution again:
 
-# In[78]:
+# In[41]:
 
 
 df_cleaned = df_cleaned[(df_cleaned['Price'] >= 2000) & (df_cleaned['Price'] <= 50000)]
 
 
-# In[79]:
+# In[42]:
 
 
 # Plot without those extreme prices
@@ -297,10 +297,10 @@ plt.show()
 
 # Due to heavy skewness of the prices, we will try to plot the distribution in it's log-values. It might help us later in the baseline model, to improve linearity between the predicted variable and the predictors.
 
-# In[80]:
+# In[55]:
 
 
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(8,4))
 plt.hist(np.log1p(df_cleaned['Price']), bins=50)
 plt.xlabel('log(price + 1)')
 plt.ylabel('Count')
@@ -330,31 +330,31 @@ print("upper bound: ", Q3 + 1.5 * IQR)
 print(f"Number of entries: {len(df_cleaned[df_cleaned['Mileage'] > 370000])}")
 
 
-# In[23]:
+# In[ ]:
 
 
 df_cleaned = df_cleaned[df_cleaned['Mileage'] <= 370000]
 
 
-# In[95]:
+# In[54]:
 
 
 lower = df_cleaned['Mileage'].quantile(0.005)
 upper = df_cleaned['Mileage'].quantile(0.995)
 
-plt.figure(figsize=(8, 4))
+plt.figure(figsize=(8,4))
 plt.hist(df_cleaned['Mileage'][(df_cleaned['Mileage'] >= lower) & (df_cleaned['Mileage'] <= upper)], bins=50)
 plt.xlabel('Mileage')
 plt.ylabel('Count')
-plt.title('Distribution of Car Mileage (0.05-99.5th Percentile)')
+plt.title('Distribution of Car Mileage (0.005-99.5th Percentile)')
 plt.tight_layout()
 plt.show()
 
 
-# In[83]:
+# In[52]:
 
 
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(8,4))
 plt.hist(np.log1p(df_cleaned['Mileage']), bins=50)
 plt.xlabel('log(Mileage + 1)')
 plt.ylabel('Count')
