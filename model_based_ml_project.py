@@ -5,13 +5,15 @@
 
 # ## Imports
 
-# In[1]:
+# In[60]:
+
 
 # Uncomment the next line and run the cell to install Pyro for Jupyter Notebook:
 #!pip install pyro-ppl
 
 
 # In[ ]:
+
 
 import numpy as np
 import pandas as pd
@@ -26,10 +28,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-import sys
-print(sys.executable)
 
-"""Command to create a python file of the notebook:"""""
+# In[ ]:
+
+
+"""Command to create a python file of the notebook (change path as needed):"""""
 #c:\Users\cahar\AppData\Local\Programs\Python\Python312\python.exe -m jupyter nbconvert --to script model_based_ml_project.ipynb
 
 
@@ -67,7 +70,7 @@ df.drop_duplicates(inplace= True)
 df.isnull().sum()
 
 
-# In[66]:
+# In[ ]:
 
 
 # Number of columns per row in the plot grid
@@ -704,7 +707,7 @@ X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, 
 print("X_train shape:", X_train.shape)
 
 
-# In[ ]:
+# In[69]:
 
 
 # Initialize and fit Ridge Regression
@@ -722,7 +725,7 @@ y_pred_train_actual = np.expm1(y_pred_train)
 y_pred_test_actual = np.expm1(y_pred_test)
 
 
-# In[ ]:
+# In[70]:
 
 
 # we will define an evaluation function
@@ -784,7 +787,7 @@ plt.show()
 
 # We will try to create another model that considers the top 6 features from the MI chart:
 
-# In[ ]:
+# In[74]:
 
 
 top_features = ['Levy', 'Mileage', 'Airbags', 'Age', 'Engine volume', 'Manufacturer_encoded']
@@ -813,7 +816,7 @@ print("R²:", r2_score(y_test_actual, y_pred_actual))
 
 # We will try to create another model that considers the top 6 correlated (in absolut values) features from heatmap chart:
 
-# In[ ]:
+# In[75]:
 
 
 # 1. Select top 6 most correlated features
