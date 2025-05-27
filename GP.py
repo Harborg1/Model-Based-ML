@@ -1,155 +1,100 @@
 import torch
-from torch.distributions import constraints
-from torch.nn import Parameter
 import numpy as np
-import pyro 
+import pyro
 import pyro.contrib.gp as gp
 import pyro.distributions as dist
-from pyro.contrib.gp.models.model import GPModel
-from pyro.contrib.gp.util import conditional
-from pyro.distributions.util import eye_like
-from pyro.nn.module import PyroParam, pyro_method
 from matplotlib import pyplot as plt
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
-X_train = np.hstack([-0.75 + np.random.rand(1,20), 0.75 + np.random.rand(1,20)]).T
-y_train = np.sin(4.0*X_train) + 0.1*np.random.randn(len(X_train), 1)
-N_train = len(y_train)
-# Build torch.tensors
-X_train_tensor = torch.from_numpy(X_train).view(-1,)
-y_train_tensor = torch.from_numpy(y_train).view(-1,)
+# Load data
+df = pd.read_csv(r'csv_files\df_baseline.csv')
 
+feature_cols = [
+    'Levy', 'Engine volume', 'Mileage', 'Cylinders', 'Airbags',
+    'Turbo', 'Age',
+    'Manufacturer_encoded', 'Category_encoded', 'GearBox_encoded',
+    'Drive_4x4', 'Drive_Front', 'Drive_Rear'
+]
+target_col = 'Price'
 
-class VariationalGP(GPModel):
-    def __init__(self, X, y, kernel, likelihood, mean_function=None,
-                 latent_shape=None, whiten=False, jitter=1e-6):
-        super().__init__(X, y, kernel, mean_function, jitter)
+# Clean and prepare features
+df[feature_cols] = df[feature_cols].apply(lambda col: pd.to_numeric(
+    col.astype(str).replace({'True': 1, 'False': 0}), errors='coerce'))
+df = df.dropna(subset=feature_cols + [target_col])
+df = df[df[target_col] > 0]  # Remove zero or negative prices
 
-        self.likelihood = likelihood
+# Log-transform and standardize the target
+log_price = np.log(df[target_col].values.astype(np.float32)).reshape(-1, 1)
+log_price_scaler = StandardScaler()
+y_log_scaled = log_price_scaler.fit_transform(log_price).flatten()
 
-        y_batch_shape = self.y.shape[:-1] if self.y is not None else torch.Size([])
-        self.latent_shape = latent_shape if latent_shape is not None else y_batch_shape
+# Standardize input features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(df[feature_cols])
 
-        N = self.X.size(0)
-        f_loc = self.X.new_zeros(self.latent_shape + (N,))
-        self.f_loc = Parameter(f_loc)
+# Convert to tensors
+X_train_tensor = torch.tensor(X_scaled, dtype=torch.float32)
+y_train_tensor = torch.tensor(y_log_scaled, dtype=torch.float32)
 
-        identity = eye_like(self.X, N)
-        f_scale_tril = identity.repeat(self.latent_shape + (1, 1))
-        self.f_scale_tril = PyroParam(f_scale_tril, constraints.lower_cholesky)
-
-        self.whiten = whiten
-        self._sample_latent = True
-
-    @pyro_method
-    def model(self):
-        self.set_mode("model")
-
-        N = self.X.size(0)
-        Kff = self.kernel(self.X).contiguous()
-        Kff.view(-1)[::N + 1] += self.jitter  # add jitter to the diagonal
-        Lff = torch.linalg.cholesky(Kff)
-
-        zero_loc = self.X.new_zeros(self.f_loc.shape)
-        if self.whiten:
-            identity = eye_like(self.X, N)
-            pyro.sample(self._pyro_get_fullname("f"),
-                        dist.MultivariateNormal(zero_loc, scale_tril=identity)
-                            .to_event(zero_loc.dim() - 1))
-            f_scale_tril = Lff.matmul(self.f_scale_tril)
-            f_loc = Lff.matmul(self.f_loc.unsqueeze(-1)).squeeze(-1)
-        else:
-            pyro.sample(self._pyro_get_fullname("f"),
-                        dist.MultivariateNormal(zero_loc, scale_tril=Lff)
-                            .to_event(zero_loc.dim() - 1))
-            f_scale_tril = self.f_scale_tril
-            f_loc = self.f_loc
-
-        f_loc = f_loc + self.mean_function(self.X)
-        f_var = f_scale_tril.pow(2).sum(dim=-1)
-        if self.y is None:
-            return f_loc, f_var
-        else:
-            return self.likelihood(f_loc, f_var, self.y)
-
-    @pyro_method
-    def guide(self):
-        self.set_mode("guide")
-        self._load_pyro_samples()
-
-        pyro.sample(self._pyro_get_fullname("f"),
-                    dist.MultivariateNormal(self.f_loc, scale_tril=self.f_scale_tril)
-                        .to_event(self.f_loc.dim()-1))
-        
-
-    def forward(self, Xnew, full_cov=False):
-        r"""
-        Computes the mean and covariance matrix (or variance) of Gaussian Process
-        posterior on a test input data :math:`X_{new}`:
-        .. math:: p(f^* \mid X_{new}, X, y, k, f_{loc}, f_{scale\_tril})
-            = \mathcal{N}(loc, cov).
-        .. note:: Variational parameters ``f_loc``, ``f_scale_tril``, together with
-            kernel's parameters have been learned from a training procedure (MCMC or
-            SVI).
-        :param torch.Tensor Xnew: A input data for testing. Note that
-            ``Xnew.shape[1:]`` must be the same as ``self.X.shape[1:]``.
-        :param bool full_cov: A flag to decide if we want to predict full covariance
-            matrix or just variance.
-        :returns: loc and covariance matrix (or variance) of :math:`p(f^*(X_{new}))`
-        :rtype: tuple(torch.Tensor, torch.Tensor)
-        """
-        self._check_Xnew_shape(Xnew)
-        self.set_mode("guide")
-
-        loc, cov = conditional(Xnew, self.X, self.kernel, self.f_loc, self.f_scale_tril,
-                               full_cov=full_cov, whiten=self.whiten, jitter=self.jitter)
-        return loc + self.mean_function(Xnew), cov
-    
-def plot(plot_observed_data=False, plot_predictions=False, n_prior_samples=0,
-         model=None, kernel=None, n_test=500):
-
-        plt.figure(figsize=(12, 6))
-        if plot_observed_data:
-            plt.plot(X_train_tensor.view(-1,).numpy(), y_train_tensor.view(-1,).numpy(), 'kx')
-        if plot_predictions:
-            Xtest = torch.linspace(-4, 4, n_test)  # test inputs
-            # compute predictive mean and variance
-            with torch.no_grad():
-                if type(model) == gp.models.VariationalSparseGP:
-                    mean, cov = model(Xtest, full_cov=True)
-                else:
-                    mean, cov = model(Xtest.double(), full_cov=True)
-            sd = cov.diag().sqrt()  # standard deviation at each input point x
-            plt.plot(Xtest.numpy(), mean.numpy(), 'r', lw=2)  # plot the mean
-            plt.fill_between(Xtest.numpy(),  # plot the two-sigma uncertainty about the mean
-                            (mean - 2.0 * sd).numpy(),
-                            (mean + 2.0 * sd).numpy(),
-                            color='C0', alpha=0.3)
-            plt.legend(["Data", "GP Posterior Mean"])
-        if n_prior_samples > 0:  # plot samples from the GP prior
-            Xtest = torch.linspace(-0.5, 5.5, n_test)  # test inputs
-            noise = (model.noise if type(model) != gp.models.VariationalSparseGP
-                    else model.likelihood.variance)
-            cov = kernel.forward(Xtest) + noise.expand(n_test).diag()
-            samples = dist.MultivariateNormal(torch.zeros(n_test), covariance_matrix=cov)\
-                        .sample(sample_shape=(n_prior_samples,))
-            plt.plot(Xtest.numpy(), samples.numpy().T, lw=2, alpha=0.4)
-
-        plt.xlim(-4, 4)
-        plt.show()
-
-# initialize the kernel, likelihood, and model
+# GP setup
 pyro.clear_param_store()
-kernel = gp.kernels.RBF(input_dim=1)
+input_dim = X_train_tensor.shape[1]
+kernel = gp.kernels.RBF(input_dim=input_dim)
+kernel.lengthscale = torch.nn.Parameter(torch.ones(input_dim))  # Enable ARD
+
 likelihood = gp.likelihoods.Gaussian()
 
-# turn on "whiten" flag for more stable optimization
-vsgp = VariationalGP(X_train_tensor.view(-1,), y_train_tensor.view(-1,), kernel, likelihood=likelihood, whiten=True)
+# Select inducing points
+M = 100
+Xu = X_train_tensor[torch.randperm(X_train_tensor.size(0))[:M]]
 
-# instead of defining our own training loop, we will
-# use the built-in support provided by the GP module
-num_steps = 1500
-losses = gp.util.train(vsgp, num_steps=num_steps)
+vsgp = gp.models.VariationalSparseGP(
+    X_train_tensor,
+    y_train_tensor,
+    kernel,
+    Xu=Xu,
+    likelihood=likelihood,
+    whiten=True,
+    jitter=1e-1
+)
+
+# Train model
+losses = gp.util.train(vsgp, num_steps=1500)
 plt.plot(losses)
+plt.title("ELBO Loss (Sparse GP on Standardized Log-Price)")
+plt.xlabel("Iteration")
+plt.ylabel("Loss")
 plt.show()
-plot(model=vsgp, plot_observed_data=True, plot_predictions=True)
 
+# Predict on training data
+with torch.no_grad():
+    pred_mean, pred_var = vsgp(X_train_tensor, full_cov=False)
+
+# Unstandardize and exponentiate
+pred_mean_unscaled = log_price_scaler.inverse_transform(pred_mean.unsqueeze(-1)).squeeze()
+pred_sd_unscaled = pred_var.sqrt() * log_price_scaler.scale_[0]  # scale the std deviation
+# Ensure both are NumPy arrays (check before converting)
+if torch.is_tensor(pred_mean_unscaled):
+    pred_mean_unscaled = pred_mean_unscaled.numpy()
+if torch.is_tensor(pred_sd_unscaled):
+    pred_sd_unscaled = pred_sd_unscaled.numpy()
+pred_price = np.exp(pred_mean_unscaled)
+pred_price_upper = np.exp(pred_mean_unscaled + 2 * pred_sd_unscaled)
+pred_price_lower = np.exp(pred_mean_unscaled - 2 * pred_sd_unscaled)
+# Plot
+true_price = df[target_col].values
+plt.figure(figsize=(10, 6))
+plt.errorbar(true_price, pred_price, 
+             yerr=[(pred_price - pred_price_lower), 
+                   (pred_price_upper - pred_price)],
+             fmt='o', alpha=0.4, label="Predicted ±2σ")
+plt.plot([true_price.min(), true_price.max()],
+         [true_price.min(), true_price.max()],
+         'k--', label="Perfect Prediction")
+plt.xlabel("True Price")
+plt.ylabel("Predicted Price (exp GP mean)")
+plt.title("GP Predicted Price vs True Price (Log-Scaled Target)")
+plt.legend()
+plt.grid(True)
+plt.show()
