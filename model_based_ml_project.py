@@ -5,14 +5,14 @@
 
 # ## Imports
 
-# In[15]:
+# In[1]:
 
 
 # Uncomment the next line and run the cell to install Pyro for Jupyter Notebook:
 #!pip install pyro-ppl
 
 
-# In[16]:
+# In[2]:
 
 
 import numpy as np
@@ -30,7 +30,7 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 
-# In[17]:
+# In[3]:
 
 
 """Command to create a python file of the notebook (change path as needed):"""""
@@ -39,7 +39,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 # # Data: Description, Preprocessing, and Analysis
 
-# In[18]:
+# In[4]:
 
 
 # Loading the data and inspect the first rows
@@ -47,7 +47,7 @@ df = pd.read_csv('car_price_prediction.csv')
 df.head()
 
 
-# In[19]:
+# In[5]:
 
 
 # Inspect the dataset: we start with the shape of the dataset, columns, and types
@@ -56,14 +56,14 @@ print("Columns and Types:")
 print(df.dtypes)
 
 
-# In[20]:
+# In[6]:
 
 
 #check for duplications
 df.duplicated().sum()
 
 
-# In[21]:
+# In[7]:
 
 
 # we will drop duplications and check for missing values
@@ -71,7 +71,7 @@ df.drop_duplicates(inplace= True)
 df.isnull().sum()
 
 
-# In[29]:
+# In[8]:
 
 
 # Number of columns per row in the plot grid
@@ -90,7 +90,7 @@ for i, col in enumerate(df.columns):
         df[col].astype(float).plot(kind='hist', bins=30, ax=ax)
         ax.set_title(f"Histogram of {col}", fontsize=12)
 
-        
+
     except:
         # For categorical data, show only the top 10 most frequent categories
         vc = df[col].value_counts(dropna=False)
@@ -113,14 +113,14 @@ plt.show()
 # 
 # Another desicion is to drop the attribute "model". This is due to high cardinality, as we have 1590 unique values (see the list below). Moreover, the "model" feature can be captured by other features of the car. i.e. the common sense is saying that the model is a major factor in the price, however, we believe that the rest of the features will capture the quality of a certain model (e.g. engine volume, leather seats, number of airbags etc). 
 
-# In[67]:
+# In[9]:
 
 
 # Check the number of unique values of each column
 df.nunique()
 
 
-# In[30]:
+# In[10]:
 
 
 # Drop irrelevant columns -4 columns
@@ -134,7 +134,7 @@ df_cleaned['Levy'] = pd.to_numeric(df_cleaned['Levy'], errors='coerce')
 df_cleaned['Leather interior'] = df_cleaned['Leather interior'].map({'Yes': 1, 'No': 0})
 
 
-# In[31]:
+# In[11]:
 
 
 #check the unique values and additional strings in engine volume
@@ -142,7 +142,7 @@ engine_volume_values = df_cleaned['Engine volume'].unique()
 sorted(engine_volume_values)
 
 
-# In[32]:
+# In[12]:
 
 
 # Create 'Turbo' binary column
@@ -152,7 +152,7 @@ df_cleaned['Turbo'] = df_cleaned['Engine volume'].str.contains('Turbo').astype(i
 df_cleaned['Engine volume'] = df_cleaned['Engine volume'].str.replace(' Turbo', '', regex=False).astype(float)
 
 
-# In[33]:
+# In[13]:
 
 
 #Drop 'Fuel type'
@@ -176,7 +176,7 @@ df_cleaned.head()
 print(df_cleaned.columns)
 
 
-# In[34]:
+# In[14]:
 
 
 # Number of columns per row in the plot grid
@@ -212,14 +212,14 @@ plt.tight_layout()
 plt.show()
 
 
-# In[35]:
+# In[15]:
 
 
 print("Descriptive Statistics:")
 df_cleaned.describe().T
 
 
-# In[36]:
+# In[16]:
 
 
 # Select only numerical columns
@@ -248,7 +248,7 @@ plt.show()
 
 # It looks like the data for the price and mileage, Levy and age, got some outliers the influence the distribution. We will inspect the prices further:
 
-# In[37]:
+# In[17]:
 
 
 print(df_cleaned['Price'].describe())
@@ -263,13 +263,13 @@ upper_bound = Q3 + 1.5 * IQR
 print("Upper bound:", upper_bound)
 
 
-# In[39]:
+# In[18]:
 
 
 print(f"Number of entries: {len(df_cleaned[df_cleaned['Price'] > 50000])}")
 
 
-# In[40]:
+# In[19]:
 
 
 print(f"Number of entries: {len(df_cleaned[df_cleaned['Price'] < 2000])}")
@@ -277,13 +277,13 @@ print(f"Number of entries: {len(df_cleaned[df_cleaned['Price'] < 2000])}")
 
 # There are 908 records of cars that their price is greater than 50,000. Also, 3,141 cars that are priced under 2,000. We will drop them, and plot the price distribution again:
 
-# In[41]:
+# In[20]:
 
 
 df_cleaned = df_cleaned[(df_cleaned['Price'] >= 2000) & (df_cleaned['Price'] <= 50000)]
 
 
-# In[42]:
+# In[21]:
 
 
 # Plot without those extreme prices
@@ -297,7 +297,7 @@ plt.show()
 
 # Due to heavy skewness of the prices, we will try to plot the distribution in it's log-values. It might help us later in the baseline model, to improve linearity between the predicted variable and the predictors.
 
-# In[55]:
+# In[22]:
 
 
 plt.figure(figsize=(8,4))
@@ -308,7 +308,7 @@ plt.title('Log-Transformed Distribution of Car Price')
 plt.show()
 
 
-# In[81]:
+# In[23]:
 
 
 #we do the same for mileage:
@@ -324,19 +324,19 @@ print("upper bound: ", Q3 + 1.5 * IQR)
 
 # since the upper bound for mileage is 352,000, we will check for removing a reasonable number of recordings, to avoid removing to much rows:
 
-# In[22]:
+# In[24]:
 
 
 print(f"Number of entries: {len(df_cleaned[df_cleaned['Mileage'] > 370000])}")
 
 
-# In[ ]:
+# In[25]:
 
 
 df_cleaned = df_cleaned[df_cleaned['Mileage'] <= 370000]
 
 
-# In[54]:
+# In[26]:
 
 
 lower = df_cleaned['Mileage'].quantile(0.005)
@@ -351,7 +351,7 @@ plt.tight_layout()
 plt.show()
 
 
-# In[52]:
+# In[27]:
 
 
 plt.figure(figsize=(8,4))
@@ -362,7 +362,7 @@ plt.title('Log-Transformed Distribution of Car Mileage')
 plt.show()
 
 
-# In[26]:
+# In[28]:
 
 
 # another check for our features and missing values:
@@ -376,14 +376,14 @@ df_cleaned.isnull().sum()
 
 # We can still see some missing values for the Levy. Levy generally refers to a tax or fee imposed by the government based on characteristics of the vehicle. Levy is influenced by the cars features like engine volume, age, vehicle type etc. We will impute missing data for levy based on engine volume and category - we will find the median value for engine volume and category and fill the missing levy based on this value.
 
-# In[96]:
+# In[29]:
 
 
 group_medians = df_cleaned.groupby(['Engine volume', 'Category'])['Levy'].median()
 group_medians.isnull().sum()
 
 
-# In[97]:
+# In[30]:
 
 
 #Since there are some in group_median that are NaN, 
@@ -395,25 +395,25 @@ print("Number of engine_volume_medians NaNs: ", engine_volume_medians.isnull().s
 global_median_levy = df_cleaned['Levy'].median()
 
 
-# In[98]:
+# In[31]:
 
 
 def impute_levy(row):
     if pd.isnull(row['Levy']):
         key = (row['Engine volume'], row['Category']) # first group_median
         levy_value = group_medians.get(key, np.nan)
-        
+
         if pd.isnull(levy_value):  # If group_median not found, use engine_volume_medians
             levy_value = engine_volume_medians.get(row['Engine volume'], np.nan)
-            
+
         if pd.isnull(levy_value):  # If not found, use global_median_levy
             levy_value = global_median_levy
-            
+
         return levy_value
     return row['Levy']
 
 
-# In[99]:
+# In[32]:
 
 
 # applying the imputation
@@ -422,7 +422,7 @@ def impute_levy(row):
 df_cleaned['Levy'] = df_cleaned.apply(impute_levy, axis=1)
 
 
-# In[100]:
+# In[33]:
 
 
 # Checking again for missing values after the data cleansing
@@ -431,7 +431,7 @@ df_cleaned.isnull().sum()
 
 # Now it looks like we are done with the missing values. We will proceed with outliers clean up:
 
-# In[101]:
+# In[34]:
 
 
 columns_to_check = ['Levy', 'Engine volume', 'Airbags', 'Cylinders', 'Age']
@@ -446,13 +446,13 @@ for col in columns_to_check:
 
     outliers = ((df_cleaned[col] < lower_bound) | (df_cleaned[col] > upper_bound)).sum()
     total = df_cleaned[col].shape[0]
-    
+
     print(f"{col}: {outliers} outliers ({round(100 * outliers / total, 2)}%) — bounds: [{lower_bound:.1f}, {upper_bound:.1f}]")
 
 
 # It doesn't look like much outliers. We can remove them, except Cylinders, that we will clean a certain and logical range:
 
-# In[102]:
+# In[35]:
 
 
 df_cleaned = df_cleaned[df_cleaned['Levy'] <= 1584]
@@ -461,7 +461,7 @@ df_cleaned = df_cleaned[(df_cleaned['Cylinders'] >= 2) & (df_cleaned['Cylinders'
 df_cleaned = df_cleaned[(df_cleaned['Age'] >= 2) & (df_cleaned['Age'] <= 26)]
 
 
-# In[103]:
+# In[36]:
 
 
 df_baseline = df_cleaned.copy()
@@ -474,7 +474,7 @@ df_baseline = df_cleaned.copy()
 # * **Gear-Box Type** - We will check whether to use dummy variables or ordinal values.
 # * **Drive Wheels** - We will check whether to use dummy variables or ordinal values.
 
-# In[104]:
+# In[37]:
 
 
 # we will create a list of averages by manufacturer
@@ -488,7 +488,7 @@ manufacturer_price_bins = pd.cut(manufacturer_avg_price, bins=bins, labels=label
 manufacturer_price_bins
 
 
-# In[105]:
+# In[38]:
 
 
 # lastly we will map each row by the manufacturer_price_bins list
@@ -497,7 +497,7 @@ df_baseline['Manufacturer_encoded'] = df_baseline['Manufacturer_encoded'].astype
 df_baseline.head()
 
 
-# In[106]:
+# In[39]:
 
 
 # before proceeding to the last 3 variables, we'll check if there is some correlation between the price
@@ -537,7 +537,7 @@ plt.show()
 # 
 # Given these ordered relationships with price, it's appropriate to encode these Category and Gear box type variables as ordinal values, rather than one-hot encoding. For Drive wheels we will use one-hot encoding since the price differences are not that significant. This approach reduces dimensionality while preserving the underlying value hierarchy these features represent.
 
-# In[107]:
+# In[40]:
 
 
 # Rank encoding for Category
@@ -557,7 +557,7 @@ df_baseline = pd.concat([df_baseline, drive_dummies], axis=1)
 
 # We will check correlations again, now that the data is fully ready:
 
-# In[65]:
+# In[41]:
 
 
 numeric_cols = df_baseline.select_dtypes(include=['float64', 'int64', 'int32','int64']).columns
@@ -585,7 +585,7 @@ fig.savefig('correlation_plots.png', bbox_inches='tight')
 plt.show()
 
 
-# In[108]:
+# In[42]:
 
 
 numeric_data = df_baseline.select_dtypes(include=[np.number])
@@ -623,7 +623,7 @@ plt.show()
 # 
 # * Engine volume and Cylinders are strongly correlated (0.64). This is logical, as bigger engines usually have more cylinders.
 
-# In[109]:
+# In[43]:
 
 
 # Define features and target
@@ -682,7 +682,7 @@ plt.show()
 
 # Now that the data is processed, and analyzed, we can introduce the first model for this project, Ridge regression. This model will serve as a baseline reference for the next models that we will introduce.
 
-# In[68]:
+# In[44]:
 
 
 # we drop redundant original categorical columns + 1 dummy to avoid multicollinearity
@@ -707,7 +707,7 @@ X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, 
 print("X_train shape:", X_train.shape)
 
 
-# In[69]:
+# In[45]:
 
 
 # Initialize and fit Ridge Regression
@@ -725,7 +725,7 @@ y_pred_train_actual = np.expm1(y_pred_train)
 y_pred_test_actual = np.expm1(y_pred_test)
 
 
-# In[70]:
+# In[46]:
 
 
 # we will define an evaluation function
@@ -737,7 +737,7 @@ def evaluate(y_true, y_pred, label):
     print()
 
 
-# In[71]:
+# In[47]:
 
 
 # and show the model evaluation
@@ -745,7 +745,7 @@ evaluate(y_train_actual, y_pred_train_actual, "Training Set")
 evaluate(y_test_actual, y_pred_test_actual, "Test Set")
 
 
-# In[72]:
+# In[48]:
 
 
 # Print intercept
@@ -761,7 +761,7 @@ print("\nTop Coefficients:")
 print(coef_df.to_string(index=False))
 
 
-# In[73]:
+# In[49]:
 
 
 # Lastly we plot predictions vs true values
@@ -787,7 +787,7 @@ plt.show()
 
 # We will try to create another model that considers the top 6 features from the MI chart:
 
-# In[74]:
+# In[50]:
 
 
 top_features = ['Levy', 'Mileage', 'Airbags', 'Age', 'Engine volume', 'Manufacturer_encoded']
@@ -816,7 +816,7 @@ print("R²:", r2_score(y_test_actual, y_pred_actual))
 
 # We will try to create another model that considers the top 6 correlated (in absolut values) features from heatmap chart:
 
-# In[75]:
+# In[51]:
 
 
 # 1. Select top 6 most correlated features
@@ -852,50 +852,453 @@ print("RMSE:", np.sqrt(mean_squared_error(y_test_actual_corr, y_pred_actual_corr
 print("R²:", r2_score(y_test_actual_corr, y_pred_actual_corr))
 
 
-# In[ ]:
+# ## Bayesian models
 
-
-
-
+# First Model PGM
 
 # In[ ]:
 
 
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
+import pandas as pd
+from pgmpy.models import BayesianNetwork, DiscreteBayesianNetwork
+from pgmpy.estimators import MaximumLikelihoodEstimator, BayesianEstimator
+from pgmpy.inference import VariableElimination
+import pymc as pm
+import torch
 
 
 # In[ ]:
 
 
+df_pgm1 = df_cleaned.copy()
+df_pgm1.info()
+
+
+# Data preparation
+
+# In[ ]:
+
+
+from sklearn.preprocessing import StandardScaler
+
+categorical_cols = ['Category', 'Gear box type']  # exemple
+
+X_cat_onehot = pd.get_dummies(df_pgm1[categorical_cols]).astype(int)
+X_onehot = pd.concat([df_pgm1, X_cat_onehot], axis=1)
+
+X = X_onehot.drop(columns=['Price','Airbags','Drive wheels', 'Gear box type', 'Category','Manufacturer','Levy',],)
+y = df_pgm1['Price']
+
+#Normalisation : Maybe add Age, Cylinders, Engine Volume later
+columns_to_scale =['Mileage']
+scaler = StandardScaler()
+X_scaled = X.copy()
+X_scaled[columns_to_scale] = scaler.fit_transform(X_scaled[columns_to_scale])
+X_scaled.describe()
+y_scaled = y/1000
+
+
+# Get train and test set
+
+# In[ ]:
+
+
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_scaled, test_size=0.2)
+X_train = torch.tensor(X_train.values, dtype=torch.float32)
+X_test = torch.tensor(X_test.values, dtype=torch.float32)
+y_train = torch.tensor(y_train.values, dtype=torch.float32)
+y_test = torch.tensor(y_test.values, dtype=torch.float32)
+print("X_train shape:", y_train.shape)
+
+
+# Define a model
+
+# In[ ]:
+
+
+# Linear Bayesian model y= X.w + bias + sigma
+
+def linear_bayesian_model(X,y=None):
+    N, D = X.shape  # N: nombre d'exemples, D: nombre de features
+    weight = pyro.sample('weight', pyro.distributions.Normal(torch.zeros(D), torch.ones(D)).to_event(1))
+    bias = pyro.sample('bias', pyro.distributions.Normal(0., 1.))
+    #sigma = pyro.sample('sigma', pyro.distributions.HalfCauchy(1.0))
+    sigma = 2
+
+    mean = torch.matmul(X, weight) + bias
+    with pyro.plate('data', N):
+        obs = pyro.sample('obs', pyro.distributions.Normal(mean, sigma), obs=y)
+    return obs
+
+
+# In[ ]:
+
+
+from pyro.contrib.autoguide import AutoDiagonalNormal, AutoMultivariateNormal, AutoNormal
+from pyro.infer import SVI, Trace_ELBO
+from pyro.optim import ClippedAdam
+
+train_elbos = []
+test_elbos = []
+# Define guide function
+#guide = AutoDiagonalNormal(ppca_model)
+guide = AutoNormal(linear_bayesian_model)
+
+# Reset parameter values
+pyro.clear_param_store()
+
+# Define the number of optimization steps
+n_steps = 10000
+
+# Setup the optimizer
+adam_params = {"lr": 0.001}
+optimizer = ClippedAdam(adam_params)
+
+# Setup the inference algorithm
+elbo = Trace_ELBO(num_particles=3)
+svi = SVI(linear_bayesian_model, guide, optimizer, loss=elbo)
+
+# Do gradient steps
+for step in range(n_steps):
+    elbo = svi.step(X_train, y_train)
+    test_loss = svi.evaluate_loss(X_test, y_test)  # évaluation (pas de mise à jour)
+
+    train_elbos.append(elbo)
+    test_elbos.append(test_loss)
+
+    if step % 500 == 0:
+        print("[%d] ELBO: %.1f" % (step, elbo))
+
+
+# Evaluate overfitting 
+
+# In[ ]:
+
+
+plt.plot(train_elbos, label="Train ELBO")
+plt.plot(test_elbos, label="Test ELBO")
+plt.xlabel("Steps")
+plt.ylabel("ELBO Loss")
+plt.legend()
+plt.title("ELBO during training")
+plt.show()
+
+
+# In[ ]:
+
+
+#X.columns
+latent = guide(X_train)  # sample un point dans la distribution approx
+weights = latent['weight'].detach().cpu().numpy()
+
+columns = ['Leather interior', 'Engine volume', 'Mileage', 'Cylinders', 'Turbo',
+       'Age', 'Manufacturer_encoded', 'Category_Cabriolet', 'Category_Coupe',
+       'Category_Goods wagon', 'Category_Hatchback', 'Category_Jeep',
+       'Category_Limousine', 'Category_Microbus', 'Category_Minivan',
+       'Category_Pickup', 'Category_Sedan', 'Category_Universal',
+       'Gear box type_Automatic', 'Gear box type_Manual',
+       'Gear box type_Tiptronic', 'Gear box type_Variator']
+
+print("Weight learned for each feature:")
+for name, w in zip(columns, weights):
+    print(f"{name:20s} : {w:.4f}")
+
+# Optionnel : biais et sigma
+print(f"Biais learned : {latent['bias'].item():.4f}")
+#print(f"Sigma learned : {latent['sigma'].item():.4f}")
+
+
+# In[ ]:
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import torch
+from pyro.infer import Predictive
+
+predictive = Predictive(linear_bayesian_model, guide=guide, num_samples=1000)
+samples = predictive(X_test)
+
+# Moyenne des prédictions (shape: [batch_size])
+y_pred_mean = samples["obs"].mean(0)      # moyenne bayésienne
+y_pred_std = samples["obs"].std(0)        # incertitude prédictive
+
+# y_test doit être de même type et forme
+y_test_np = y_test.detach().numpy()
+y_pred_np = y_pred_mean.detach().numpy()
+y_std_np = y_pred_std.detach().numpy()
+
+# Scatter plot : prédiction vs vrai
+plt.figure(figsize=(8, 6))
+sns.scatterplot(x=y_test_np, y=y_pred_np)
+plt.plot([y_test_np.min(), y_test_np.max()], [y_test_np.min(), y_test_np.max()], 'r--')  # ligne y=x
+plt.xlabel("Vraies valeurs (y_test)")
+plt.ylabel("Prédictions bayésiennes (moyenne)")
+plt.title("Prédictions vs Réel")
+plt.grid(True)
+plt.show()
+
+
+# In[ ]:
+
+
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
+mse = mean_squared_error(y_test_np, y_pred_np)
+rmse = torch.sqrt(torch.tensor(mse))
+mae = mean_absolute_error(y_test_np, y_pred_np)
+r2 = r2_score(y_test_np, y_pred_np)
+
+
+print(f"MAE  : {mae:.2f}")
+print(f"RMSE : {rmse:.2f}")
+print(f"R²    : {r2:.4f}")
+print("Y_std:", y_std_np)
+print("Y_pred:", y_pred_np)
+
+
+# ### Model 2
+
+# PGM
+
+# In[ ]:
+
+
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+
+img = mpimg.imread('PGM.jpg')
+plt.imshow(img)
+plt.axis('off')
+plt.show()
+
+
+# Data process
+
+# In[ ]:
+
+
+X_scaled.columns
+columns_quality = ['Turbo', 'Engine volume', 'Cylinders']
+columns_seniority = ['Age', 'Mileage']
+columns_performance = ['Category_Cabriolet', 'Category_Coupe',
+       'Category_Goods wagon', 'Category_Hatchback', 'Category_Jeep',
+       'Category_Limousine', 'Category_Microbus', 'Category_Minivan',
+       'Category_Pickup', 'Category_Sedan', 'Category_Universal',
+       'Gear box type_Automatic', 'Gear box type_Manual',
+       'Gear box type_Tiptronic', 'Gear box type_Variator']
+columns_status = ['Leather interior', 'Manufacturer_encoded', 'Category_Cabriolet', 'Category_Coupe',
+       'Category_Goods wagon', 'Category_Hatchback', 'Category_Jeep',
+       'Category_Limousine', 'Category_Microbus', 'Category_Minivan',
+       'Category_Pickup', 'Category_Sedan', 'Category_Universal']
 
 
 
 # In[ ]:
 
 
+X_scaled_model2 =X_scaled.copy()
+y_scaled_model2 = y_scaled.copy()
+X_train, X_test, y_train, y_test = train_test_split(X_scaled_model2, y_scaled_model2, test_size=0.2)
 
+X_train_quality = X_train[columns_quality]
+X_train_seniority = X_train[columns_seniority]
+X_train_performance = X_train[columns_performance]
+X_train_status = X_train[columns_status]
+
+X_test_quality = X_test[columns_quality]
+X_test_seniority = X_test[columns_seniority]
+X_test_performance = X_test[columns_performance]
+X_test_status = X_test[columns_status]
+
+X_train_quality = torch.tensor(X_train_quality.values, dtype=torch.float32)
+X_train_performance = torch.tensor(X_train_performance.values, dtype=torch.float32)
+X_train_status = torch.tensor(X_train_status.values, dtype=torch.float32)
+X_train_seniority = torch.tensor(X_train_seniority.values, dtype=torch.float32)
+
+X_test_quality = torch.tensor(X_test_quality.values, dtype=torch.float32)
+X_test_performance = torch.tensor(X_test_performance.values, dtype=torch.float32)
+X_test_status = torch.tensor(X_test_status.values, dtype=torch.float32)
+X_test_seniority = torch.tensor(X_test_seniority.values, dtype=torch.float32)
+
+y_train = torch.tensor(y_train.values, dtype=torch.float32)
+y_test = torch.tensor(y_test.values, dtype=torch.float32)
 
 
 # In[ ]:
 
 
+import pyro.distributions
 
+#Latent deterministic for now
+def model2(X_quality, X_performance, X_status, X_seniority, y=None):
+    N = X_quality.shape[0]
+
+    # Quality latent
+    D_q = X_quality.shape[1]
+    w_q = pyro.sample("w_quality", pyro.distributions.Normal(torch.zeros(D_q), torch.ones(D_q)).to_event(1))
+    b_q = pyro.sample("b_quality", pyro.distributions.Normal(0., 1.))
+    quality_latent = torch.matmul(X_quality, w_q) + b_q
+
+    # Performance latent conditionné sur quality
+    D_p = X_performance.shape[1]
+    w_p_x = pyro.sample("w_performance_x", pyro.distributions.Normal(torch.zeros(D_p), torch.ones(D_p)).to_event(1))
+    w_p_q = pyro.sample("w_performance_q", pyro.distributions.Normal(0., 1.))  # pondère quality_latent
+    b_p = pyro.sample("b_performance", pyro.distributions.Normal(0., 1.))
+    performance_latent = torch.matmul(X_performance, w_p_x) + w_p_q * quality_latent + b_p
+
+    # Status
+    D_s = X_status.shape[1]
+    w_s = pyro.sample("w_status", pyro.distributions.Normal(torch.zeros(D_s), torch.ones(D_s)).to_event(1))
+    b_s = pyro.sample("b_status", pyro.distributions.Normal(0., 1.))
+    status_latent = torch.matmul(X_status, w_s) + b_s
+
+    # Seniority
+    D_se = X_seniority.shape[1]
+    w_se = pyro.sample("w_seniority", pyro.distributions.Normal(torch.zeros(D_se), torch.ones(D_se)).to_event(1))
+    b_se = pyro.sample("b_seniority", pyro.distributions.Normal(0., 1.))
+    seniority_latent = torch.matmul(X_seniority, w_se) + b_se
+
+    # Global linear combination
+    w_perf = pyro.sample("w_perf", pyro.distributions.Normal(0., 1.))
+    w_stat = pyro.sample("w_stat", pyro.distributions.Normal(0., 1.))
+    w_sen = pyro.sample("w_sen", pyro.distributions.Normal(0., 1.))
+    b_global = pyro.sample("bias_global", pyro.distributions.Normal(0., 1.))
+    #sigma = pyro.sample("sigma", pyro.distributions.HalfCauchy(1.))
+    sigma =1
+
+    global_mean = (
+        quality_latent +  # directement inclus
+        w_perf * performance_latent +
+        w_stat * status_latent +
+        w_sen * seniority_latent +
+        b_global
+    )
+
+    with pyro.plate("data", N):
+        obs=pyro.sample("obs", pyro.distributions.Normal(global_mean, sigma), obs=y)
+    return obs
 
 
 # In[ ]:
 
 
+from pyro.contrib.autoguide import AutoDiagonalNormal, AutoMultivariateNormal, AutoNormal
+from pyro.infer import SVI, Trace_ELBO
+from pyro.optim import ClippedAdam
 
+train_elbos = []
+test_elbos = []
+# Define guide function
+#guide = AutoDiagonalNormal(ppca_model)
+guide = AutoNormal(model2)
+
+# Reset parameter values
+pyro.clear_param_store()
+
+# Define the number of optimization steps
+n_steps = 2000
+
+# Setup the optimizer
+adam_params = {"lr": 0.001}
+optimizer = ClippedAdam(adam_params)
+
+# Setup the inference algorithm
+elbo = Trace_ELBO(num_particles=3)
+svi = SVI(model2, guide, optimizer, loss=elbo)
+
+# Do gradient steps
+for step in range(n_steps):
+    elbo = svi.step(X_train_quality, X_train_performance, X_train_status, X_train_seniority, y_train)
+    test_loss = svi.evaluate_loss(X_test_quality, X_test_performance, X_test_status, X_test_seniority, y_test)  # évaluation (pas de mise à jour)
+
+    train_elbos.append(elbo)
+    test_elbos.append(test_loss)
+
+    if step % 100 == 0:
+        print("[%d] ELBO: %.1f" % (step, elbo))
+
+
+# In[ ]:
+
+
+plt.plot(train_elbos, label="Train ELBO")
+plt.plot(test_elbos, label="Test ELBO")
+plt.xlabel("Steps")
+plt.ylabel("ELBO Loss")
+plt.legend()
+plt.title("ELBO during training")
+plt.show()
+
+#X.columns
+latent = guide(X_train_quality, X_train_performance, X_train_status, X_train_seniority)  # sample un point dans la distribution approx
+weights_quality = latent['w_quality'].detach().cpu().numpy()
+weights_status = latent['w_status'].detach().cpu().numpy()
+weights_seniority = latent['w_seniority'].detach().cpu().numpy()
+weights_performance = latent['w_performance_x'].detach().cpu().numpy()
+weights_performance_q = latent['w_performance_q'].detach().cpu().numpy()
+
+
+print("Weight learned for each feature:")
+for name, w in zip(columns_quality, weights_quality):
+    print(f"{name:20s} : {w:.4f}")
+for name, w in zip(columns_performance, weights_performance):
+    print(f"{name:20s} : {w:.4f}")
+print("Quality :", weights_performance_q)
+for name, w in zip(columns_status, weights_status):
+    print(f"{name:20s} : {w:.4f}")
+for name, w in zip(columns_seniority, weights_seniority):
+    print(f"{name:20s} : {w:.4f}")
+
+# Optionnel : biais et sigma
+#print(f"Biais learned : {latent['bias'].item():.4f}")
+#print(f"Sigma learned : {latent['sigma'].item():.4f}")
+
+
+# In[ ]:
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import torch
+from pyro.infer import Predictive
+
+predictive = Predictive(model2, guide=guide, num_samples=1000)
+samples = predictive(X_test_quality, X_test_performance, X_test_status, X_test_seniority)
+
+# Moyenne des prédictions (shape: [batch_size])
+y_pred_mean = samples["obs"].mean(0)      # moyenne bayésienne
+y_pred_std = samples["obs"].std(0)        # incertitude prédictive
+
+# y_test doit être de même type et forme
+y_test_np = y_test.detach().numpy()
+y_pred_np = y_pred_mean.detach().numpy()
+y_std_np = y_pred_std.detach().numpy()
+
+# Scatter plot : prédiction vs vrai
+plt.figure(figsize=(8, 6))
+sns.scatterplot(x=y_test_np, y=y_pred_np)
+plt.plot([y_test_np.min(), y_test_np.max()], [y_test_np.min(), y_test_np.max()], 'r--')  # ligne y=x
+plt.xlabel("Real Price (y_test)")
+plt.ylabel("Mean Price prediction")
+plt.title("Prediction vs Real")
+plt.grid(True)
+plt.show()
+
+
+# In[ ]:
+
+
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
+mse = mean_squared_error(y_test_np, y_pred_np)
+rmse = torch.sqrt(torch.tensor(mse))
+mae = mean_absolute_error(y_test_np, y_pred_np)
+r2 = r2_score(y_test_np, y_pred_np)
+
+print(f"MAE  : {mae:.2f}")
+print(f"RMSE : {rmse:.2f}")
+print(f"R²    : {r2:.4f}")
+print("Y_std:", y_std_np)
+print("Y_pred:", y_pred_np)
 
