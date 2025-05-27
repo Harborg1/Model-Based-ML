@@ -5,6 +5,7 @@ import pyro.contrib.gp as gp
 import pyro.distributions as dist
 from matplotlib import pyplot as plt
 import pandas as pd
+from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
 # Load data
@@ -22,7 +23,6 @@ target_col = 'Price'
 df[feature_cols] = df[feature_cols].apply(lambda col: pd.to_numeric(
     col.astype(str).replace({'True': 1, 'False': 0}), errors='coerce'))
 df = df.dropna(subset=feature_cols + [target_col])
-df = df[df[target_col] > 0]  # Remove zero or negative prices
 
 # Log-transform and standardize the target
 log_price = np.log(df[target_col].values.astype(np.float32)).reshape(-1, 1)
@@ -46,8 +46,9 @@ kernel.lengthscale = torch.nn.Parameter(torch.ones(input_dim))  # Enable ARD
 likelihood = gp.likelihoods.Gaussian()
 
 # Select inducing points
-M = 100
-Xu = X_train_tensor[torch.randperm(X_train_tensor.size(0))[:M]]
+M = 300
+kmeans = KMeans(n_clusters=M, random_state=42).fit(X_scaled)
+Xu = torch.tensor(kmeans.cluster_centers_, dtype=torch.float32)
 
 vsgp = gp.models.VariationalSparseGP(
     X_train_tensor,
@@ -98,3 +99,45 @@ plt.title("GP Predicted Price vs True Price (Log-Scaled Target)")
 plt.legend()
 plt.grid(True)
 plt.show()
+
+
+# ── 1. Residuals-vs-True-Price ───────────────────────────────────────────
+import matplotlib.pyplot as plt
+import numpy as np
+
+residuals = true_price - pred_price          # raw residuals
+plt.figure(figsize=(8,5))
+plt.scatter(true_price, residuals, alpha=0.25)
+plt.axhline(0, ls='--', lw=1)
+plt.xlabel("True price")
+plt.ylabel("Residual (True − Pred)")
+plt.title("Residuals vs. True Price")
+plt.grid(True)
+plt.show()
+
+from sklearn.metrics import mean_absolute_error
+
+mae = mean_absolute_error(true_price, pred_price)
+
+# Scatter plot with MAE annotated
+plt.figure(figsize=(8,6))
+plt.scatter(true_price, pred_price, alpha=0.3, label='Predictions')
+plt.plot([true_price.min(), true_price.max()],
+         [true_price.min(), true_price.max()],
+         'k--', label='Perfect Prediction')
+
+plt.xlabel("True Price")
+plt.ylabel("Predicted Price")
+plt.title("GP Predicted Price vs True Price\n(MAE = {:.2f})".format(mae))
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ── 1. Print Learned ARD Lengthscales ──────────────────────────────
+lengthscales = kernel.lengthscale.detach().cpu().numpy().flatten()
+relevance = 1 / lengthscales  # smaller lengthscale → more relevant feature
+
+print("\nFeature relevance via ARD (lower lengthscale = more relevant):")
+for feat, score in sorted(zip(feature_cols, relevance), key=lambda x: -x[1]):
+    print(f"{feat:20s}  relevance: {score:.4f}")
