@@ -5,14 +5,14 @@
 
 # ## Imports
 
-# In[1]:
+# In[160]:
 
 
 # Uncomment the next line and run the cell to install Pyro for Jupyter Notebook:
 #!pip install pyro-ppl
 
 
-# In[2]:
+# In[161]:
 
 
 import numpy as np
@@ -30,7 +30,7 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 
-# In[3]:
+# In[162]:
 
 
 """Command to create a python file of the notebook (change path as needed):"""""
@@ -39,15 +39,15 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 # # Data: Description, Preprocessing, and Analysis
 
-# In[4]:
+# In[163]:
 
 
 # Loading the data and inspect the first rows
-df = pd.read_csv('car_price_prediction.csv')
+df = pd.read_csv('csv_files\car_price_prediction.csv')
 df.head()
 
 
-# In[5]:
+# In[164]:
 
 
 # Inspect the dataset: we start with the shape of the dataset, columns, and types
@@ -56,14 +56,14 @@ print("Columns and Types:")
 print(df.dtypes)
 
 
-# In[6]:
+# In[165]:
 
 
 #check for duplications
 df.duplicated().sum()
 
 
-# In[7]:
+# In[166]:
 
 
 # we will drop duplications and check for missing values
@@ -71,7 +71,7 @@ df.drop_duplicates(inplace= True)
 df.isnull().sum()
 
 
-# In[8]:
+# In[167]:
 
 
 # Number of columns per row in the plot grid
@@ -113,14 +113,14 @@ plt.show()
 # 
 # Another desicion is to drop the attribute "model". This is due to high cardinality, as we have 1590 unique values (see the list below). Moreover, the "model" feature can be captured by other features of the car. i.e. the common sense is saying that the model is a major factor in the price, however, we believe that the rest of the features will capture the quality of a certain model (e.g. engine volume, leather seats, number of airbags etc). 
 
-# In[9]:
+# In[168]:
 
 
 # Check the number of unique values of each column
 df.nunique()
 
 
-# In[10]:
+# In[169]:
 
 
 # Drop irrelevant columns -4 columns
@@ -134,7 +134,7 @@ df_cleaned['Levy'] = pd.to_numeric(df_cleaned['Levy'], errors='coerce')
 df_cleaned['Leather interior'] = df_cleaned['Leather interior'].map({'Yes': 1, 'No': 0})
 
 
-# In[11]:
+# In[170]:
 
 
 #check the unique values and additional strings in engine volume
@@ -142,7 +142,7 @@ engine_volume_values = df_cleaned['Engine volume'].unique()
 sorted(engine_volume_values)
 
 
-# In[12]:
+# In[171]:
 
 
 # Create 'Turbo' binary column
@@ -152,7 +152,7 @@ df_cleaned['Turbo'] = df_cleaned['Engine volume'].str.contains('Turbo').astype(i
 df_cleaned['Engine volume'] = df_cleaned['Engine volume'].str.replace(' Turbo', '', regex=False).astype(float)
 
 
-# In[13]:
+# In[172]:
 
 
 #Drop 'Fuel type'
@@ -176,7 +176,7 @@ df_cleaned.head()
 print(df_cleaned.columns)
 
 
-# In[14]:
+# In[173]:
 
 
 # Number of columns per row in the plot grid
@@ -212,14 +212,14 @@ plt.tight_layout()
 plt.show()
 
 
-# In[15]:
+# In[174]:
 
 
 print("Descriptive Statistics:")
 df_cleaned.describe().T
 
 
-# In[16]:
+# In[ ]:
 
 
 # Select only numerical columns
@@ -242,13 +242,13 @@ for j in range(i + 1, len(axes)):
     axes[j].axis('off')
 
 plt.tight_layout()
-fig.savefig('boxplots.png', bbox_inches='tight')
+fig.savefig(r'images\boxplots.png', bbox_inches='tight')
 plt.show()
 
 
 # It looks like the data for the price and mileage, Levy and age, got some outliers the influence the distribution. We will inspect the prices further:
 
-# In[17]:
+# In[176]:
 
 
 print(df_cleaned['Price'].describe())
@@ -263,13 +263,13 @@ upper_bound = Q3 + 1.5 * IQR
 print("Upper bound:", upper_bound)
 
 
-# In[18]:
+# In[177]:
 
 
 print(f"Number of entries: {len(df_cleaned[df_cleaned['Price'] > 50000])}")
 
 
-# In[19]:
+# In[178]:
 
 
 print(f"Number of entries: {len(df_cleaned[df_cleaned['Price'] < 2000])}")
@@ -277,13 +277,13 @@ print(f"Number of entries: {len(df_cleaned[df_cleaned['Price'] < 2000])}")
 
 # There are 908 records of cars that their price is greater than 50,000. Also, 3,141 cars that are priced under 2,000. We will drop them, and plot the price distribution again:
 
-# In[20]:
+# In[179]:
 
 
 df_cleaned = df_cleaned[(df_cleaned['Price'] >= 2000) & (df_cleaned['Price'] <= 50000)]
 
 
-# In[21]:
+# In[180]:
 
 
 # Plot without those extreme prices
@@ -297,7 +297,7 @@ plt.show()
 
 # Due to heavy skewness of the prices, we will try to plot the distribution in it's log-values. It might help us later in the baseline model, to improve linearity between the predicted variable and the predictors.
 
-# In[22]:
+# In[181]:
 
 
 plt.figure(figsize=(8,4))
@@ -308,7 +308,7 @@ plt.title('Log-Transformed Distribution of Car Price')
 plt.show()
 
 
-# In[23]:
+# In[182]:
 
 
 #we do the same for mileage:
@@ -324,19 +324,19 @@ print("upper bound: ", Q3 + 1.5 * IQR)
 
 # since the upper bound for mileage is 352,000, we will check for removing a reasonable number of recordings, to avoid removing to much rows:
 
-# In[24]:
+# In[183]:
 
 
 print(f"Number of entries: {len(df_cleaned[df_cleaned['Mileage'] > 370000])}")
 
 
-# In[25]:
+# In[ ]:
 
 
 df_cleaned = df_cleaned[df_cleaned['Mileage'] <= 370000]
 
 
-# In[26]:
+# In[185]:
 
 
 lower = df_cleaned['Mileage'].quantile(0.005)
@@ -351,7 +351,7 @@ plt.tight_layout()
 plt.show()
 
 
-# In[27]:
+# In[186]:
 
 
 plt.figure(figsize=(8,4))
@@ -362,7 +362,7 @@ plt.title('Log-Transformed Distribution of Car Mileage')
 plt.show()
 
 
-# In[28]:
+# In[187]:
 
 
 # another check for our features and missing values:
@@ -376,14 +376,14 @@ df_cleaned.isnull().sum()
 
 # We can still see some missing values for the Levy. Levy generally refers to a tax or fee imposed by the government based on characteristics of the vehicle. Levy is influenced by the cars features like engine volume, age, vehicle type etc. We will impute missing data for levy based on engine volume and category - we will find the median value for engine volume and category and fill the missing levy based on this value.
 
-# In[29]:
+# In[188]:
 
 
 group_medians = df_cleaned.groupby(['Engine volume', 'Category'])['Levy'].median()
 group_medians.isnull().sum()
 
 
-# In[30]:
+# In[189]:
 
 
 #Since there are some in group_median that are NaN, 
@@ -395,7 +395,7 @@ print("Number of engine_volume_medians NaNs: ", engine_volume_medians.isnull().s
 global_median_levy = df_cleaned['Levy'].median()
 
 
-# In[31]:
+# In[190]:
 
 
 def impute_levy(row):
@@ -413,7 +413,7 @@ def impute_levy(row):
     return row['Levy']
 
 
-# In[32]:
+# In[191]:
 
 
 # applying the imputation
@@ -422,7 +422,7 @@ def impute_levy(row):
 df_cleaned['Levy'] = df_cleaned.apply(impute_levy, axis=1)
 
 
-# In[33]:
+# In[192]:
 
 
 # Checking again for missing values after the data cleansing
@@ -431,7 +431,7 @@ df_cleaned.isnull().sum()
 
 # Now it looks like we are done with the missing values. We will proceed with outliers clean up:
 
-# In[34]:
+# In[193]:
 
 
 columns_to_check = ['Levy', 'Engine volume', 'Airbags', 'Cylinders', 'Age']
@@ -452,7 +452,7 @@ for col in columns_to_check:
 
 # It doesn't look like much outliers. We can remove them, except Cylinders, that we will clean a certain and logical range:
 
-# In[35]:
+# In[194]:
 
 
 df_cleaned = df_cleaned[df_cleaned['Levy'] <= 1584]
@@ -461,7 +461,7 @@ df_cleaned = df_cleaned[(df_cleaned['Cylinders'] >= 2) & (df_cleaned['Cylinders'
 df_cleaned = df_cleaned[(df_cleaned['Age'] >= 2) & (df_cleaned['Age'] <= 26)]
 
 
-# In[36]:
+# In[195]:
 
 
 df_baseline = df_cleaned.copy()
@@ -474,7 +474,7 @@ df_baseline = df_cleaned.copy()
 # * **Gear-Box Type** - We will check whether to use dummy variables or ordinal values.
 # * **Drive Wheels** - We will check whether to use dummy variables or ordinal values.
 
-# In[37]:
+# In[196]:
 
 
 # we will create a list of averages by manufacturer
@@ -488,7 +488,7 @@ manufacturer_price_bins = pd.cut(manufacturer_avg_price, bins=bins, labels=label
 manufacturer_price_bins
 
 
-# In[38]:
+# In[197]:
 
 
 # lastly we will map each row by the manufacturer_price_bins list
@@ -497,7 +497,7 @@ df_baseline['Manufacturer_encoded'] = df_baseline['Manufacturer_encoded'].astype
 df_baseline.head()
 
 
-# In[39]:
+# In[ ]:
 
 
 # before proceeding to the last 3 variables, we'll check if there is some correlation between the price
@@ -523,7 +523,7 @@ axes[2].set_title('Avg Price by Gear box type')
 axes[2].tick_params(axis='x', rotation=45)
 
 plt.tight_layout()
-fig.savefig('categorical_vars.png', bbox_inches='tight')
+fig.savefig(r'images\categorical_vars.png', bbox_inches='tight')
 plt.show()
 
 
@@ -537,7 +537,7 @@ plt.show()
 # 
 # Given these ordered relationships with price, it's appropriate to encode these Category and Gear box type variables as ordinal values, rather than one-hot encoding. For Drive wheels we will use one-hot encoding since the price differences are not that significant. This approach reduces dimensionality while preserving the underlying value hierarchy these features represent.
 
-# In[40]:
+# In[ ]:
 
 
 # Rank encoding for Category
@@ -553,11 +553,13 @@ df_baseline['GearBox_encoded'] = df_baseline['Gear box type'].map(gearbox_rank)
 # One-hot encoding for Drive wheels
 drive_dummies = pd.get_dummies(df_baseline['Drive wheels'], prefix='Drive')
 df_baseline = pd.concat([df_baseline, drive_dummies], axis=1)
+#Save the df_baseline to a .csv file
+df_baseline.to_csv("csv_files\df_baseline.csv", index=False)
 
 
 # We will check correlations again, now that the data is fully ready:
 
-# In[41]:
+# In[ ]:
 
 
 numeric_cols = df_baseline.select_dtypes(include=['float64', 'int64', 'int32','int64']).columns
@@ -581,11 +583,11 @@ for j in range(i + 1, len(axes)):
 
 plt.tight_layout()
 plt.suptitle('Scatter Plots: Price vs Other Features', fontsize=16, y=1.02)
-fig.savefig('correlation_plots.png', bbox_inches='tight')
+fig.savefig(r'images\correlation_plots.png', bbox_inches='tight')
 plt.show()
 
 
-# In[42]:
+# In[ ]:
 
 
 numeric_data = df_baseline.select_dtypes(include=[np.number])
@@ -611,7 +613,7 @@ plt.xticks(rotation=45, ha='right', fontsize=10)
 plt.yticks(fontsize=10)
 plt.title("Correlation Matrix of Numeric Features", fontsize=16)
 plt.tight_layout()
-fig.savefig('correlation_heat_plot.png', bbox_inches='tight')
+fig.savefig(r'images\correlation_heat_plot.png', bbox_inches='tight')
 plt.show()
 
 
@@ -623,7 +625,7 @@ plt.show()
 # 
 # * Engine volume and Cylinders are strongly correlated (0.64). This is logical, as bigger engines usually have more cylinders.
 
-# In[43]:
+# In[202]:
 
 
 # Define features and target
@@ -682,7 +684,7 @@ plt.show()
 
 # Now that the data is processed, and analyzed, we can introduce the first model for this project, Ridge regression. This model will serve as a baseline reference for the next models that we will introduce.
 
-# In[44]:
+# In[203]:
 
 
 # we drop redundant original categorical columns + 1 dummy to avoid multicollinearity
@@ -707,7 +709,7 @@ X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, 
 print("X_train shape:", X_train.shape)
 
 
-# In[45]:
+# In[204]:
 
 
 # Initialize and fit Ridge Regression
@@ -725,7 +727,7 @@ y_pred_train_actual = np.expm1(y_pred_train)
 y_pred_test_actual = np.expm1(y_pred_test)
 
 
-# In[46]:
+# In[205]:
 
 
 # we will define an evaluation function
@@ -737,7 +739,7 @@ def evaluate(y_true, y_pred, label):
     print()
 
 
-# In[47]:
+# In[206]:
 
 
 # and show the model evaluation
@@ -745,7 +747,7 @@ evaluate(y_train_actual, y_pred_train_actual, "Training Set")
 evaluate(y_test_actual, y_pred_test_actual, "Test Set")
 
 
-# In[48]:
+# In[207]:
 
 
 # Print intercept
@@ -761,7 +763,7 @@ print("\nTop Coefficients:")
 print(coef_df.to_string(index=False))
 
 
-# In[49]:
+# In[ ]:
 
 
 # Lastly we plot predictions vs true values
@@ -772,7 +774,7 @@ plt.xlabel("True Price")
 plt.ylabel("Predicted Price")
 plt.title("Ridge Regression: Predicted vs True (Test Set)")
 plt.tight_layout()
-fig.savefig('true_vs_pred_Ridge_baseline.png', bbox_inches='tight')
+fig.savefig(r'images\true_vs_pred_Ridge_baseline.png', bbox_inches='tight')
 plt.show()
 
 
@@ -787,7 +789,7 @@ plt.show()
 
 # We will try to create another model that considers the top 6 features from the MI chart:
 
-# In[50]:
+# In[209]:
 
 
 top_features = ['Levy', 'Mileage', 'Airbags', 'Age', 'Engine volume', 'Manufacturer_encoded']
@@ -816,7 +818,7 @@ print("R²:", r2_score(y_test_actual, y_pred_actual))
 
 # We will try to create another model that considers the top 6 correlated (in absolut values) features from heatmap chart:
 
-# In[51]:
+# In[210]:
 
 
 # 1. Select top 6 most correlated features
@@ -856,7 +858,7 @@ print("R²:", r2_score(y_test_actual_corr, y_pred_actual_corr))
 
 # First Model PGM
 
-# In[ ]:
+# In[211]:
 
 
 import pandas as pd
@@ -867,7 +869,8 @@ import pymc as pm
 import torch
 
 
-# In[ ]:
+
+# In[212]:
 
 
 df_pgm1 = df_cleaned.copy()
@@ -876,7 +879,7 @@ df_pgm1.info()
 
 # Data preparation
 
-# In[ ]:
+# In[213]:
 
 
 from sklearn.preprocessing import StandardScaler
@@ -900,7 +903,7 @@ y_scaled = y/1000
 
 # Get train and test set
 
-# In[ ]:
+# In[214]:
 
 
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_scaled, test_size=0.2)
@@ -913,7 +916,7 @@ print("X_train shape:", y_train.shape)
 
 # Define a model
 
-# In[ ]:
+# In[215]:
 
 
 # Linear Bayesian model y= X.w + bias + sigma
@@ -931,7 +934,7 @@ def linear_bayesian_model(X,y=None):
     return obs
 
 
-# In[ ]:
+# In[216]:
 
 
 from pyro.contrib.autoguide import AutoDiagonalNormal, AutoMultivariateNormal, AutoNormal
@@ -972,7 +975,7 @@ for step in range(n_steps):
 
 # Evaluate overfitting 
 
-# In[ ]:
+# In[217]:
 
 
 plt.plot(train_elbos, label="Train ELBO")
@@ -984,7 +987,7 @@ plt.title("ELBO during training")
 plt.show()
 
 
-# In[ ]:
+# In[218]:
 
 
 #X.columns
@@ -1008,7 +1011,7 @@ print(f"Biais learned : {latent['bias'].item():.4f}")
 #print(f"Sigma learned : {latent['sigma'].item():.4f}")
 
 
-# In[ ]:
+# In[219]:
 
 
 import matplotlib.pyplot as plt
@@ -1039,7 +1042,7 @@ plt.grid(True)
 plt.show()
 
 
-# In[ ]:
+# In[220]:
 
 
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
@@ -1061,7 +1064,7 @@ print("Y_pred:", y_pred_np)
 
 # PGM
 
-# In[ ]:
+# In[221]:
 
 
 import matplotlib.pyplot as plt
@@ -1075,7 +1078,7 @@ plt.show()
 
 # Data process
 
-# In[ ]:
+# In[222]:
 
 
 X_scaled.columns
@@ -1094,7 +1097,7 @@ columns_status = ['Leather interior', 'Manufacturer_encoded', 'Category_Cabriole
 
 
 
-# In[ ]:
+# In[223]:
 
 
 X_scaled_model2 =X_scaled.copy()
