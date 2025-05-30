@@ -68,6 +68,11 @@ y_train = scaler.fit_transform(log_train_price).flatten()
 y_test = scaler.transform(log_test_price).flatten()
 
 
+
+#CELL 2 
+
+
+
 X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
 y_train_tensor = torch.tensor(y_train, dtype=torch.float32)
 
@@ -77,12 +82,12 @@ X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
 pyro.clear_param_store()
 input_dim = X_train_tensor.shape[1]
 kernel = gp.kernels.RBF(input_dim=input_dim)
-kernel.lengthscale = torch.nn.Parameter(torch.ones(input_dim))  # Enable ARD
+kernel.lengthscale = torch.nn.Parameter(torch.ones(input_dim)*0.5)  # Enable ARD
 
-likelihood = gp.likelihoods.Gaussian()
+likelihood = gp.likelihoods.Gaussian(variance=torch.tensor(0.1))  # Try 0.01, 0.1, 1.0
 
 # Select inducing points from training data only
-M = 300
+M = 500
 kmeans = KMeans(n_clusters=M).fit(X_train)
 Xu = torch.tensor(kmeans.cluster_centers_, dtype=torch.float32)
 
@@ -96,13 +101,23 @@ vsgp = gp.models.VariationalSparseGP(
     jitter=1e-1
 )
 
+
+
+#CELL 3 
+
+
+
+
 # Train model
-losses = gp.util.train(vsgp, num_steps=1500)
+losses = gp.util.train(vsgp, num_steps=2000)
 plt.plot(losses)
 plt.title("ELBO Loss (Sparse GP on Standardized Log-Price)")
 plt.xlabel("Iteration")
 plt.ylabel("Loss")
 plt.show()
+
+
+#Cell 4 Predict and plot
 
 # ── Predict on TEST set ──
 with torch.no_grad():
@@ -168,6 +183,18 @@ plt.legend()
 plt.grid(True)
 plt.tight_layout()
 plt.show()
+
+
+from sklearn.metrics import mean_squared_error, r2_score
+import numpy as np
+
+rmse = np.sqrt(mean_squared_error(true_price, pred_price))
+r2 = r2_score(true_price, pred_price)
+
+print(f"RMSE: {rmse:.2f}")
+print(f"R²: {r2:.4f}")
+
+
 
 # ── ARD relevance ──
 lengthscales = kernel.lengthscale.detach().cpu().numpy().flatten()
