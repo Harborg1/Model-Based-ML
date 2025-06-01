@@ -123,39 +123,42 @@ class VariationalGP(GPModel):
         loc, cov = conditional(Xnew, self.X, self.kernel, self.f_loc, self.f_scale_tril,
                                full_cov=full_cov, whiten=self.whiten, jitter=self.jitter)
         return loc + self.mean_function(Xnew), cov
-    
-def plot(plot_observed_data=False, plot_predictions=False, n_prior_samples=0,
-         model=None, kernel=None, n_test=500):
+def plot_gp_along_feature(model, feature_index=0, X_train_tensor=None, y_train_tensor=None,
+                        scaler=None, n_test=500, feature_name="Mileage"):
+    """
+    Plot GP posterior along a single feature (others held constant at mean).
+    """
+    assert X_train_tensor is not None and y_train_tensor is not None
 
-        plt.figure(figsize=(12, 6))
-        if plot_observed_data:
-            plt.plot(X_train_tensor.view(-1,).numpy(), y_train_tensor.view(-1,).numpy(), 'kx')
-        if plot_predictions:
-            Xtest = torch.linspace(-4, 4, n_test)  # test inputs
-            # compute predictive mean and variance
-            with torch.no_grad():
-                if type(model) == gp.models.VariationalSparseGP:
-                    mean, cov = model(Xtest, full_cov=True)
-                else:
-                    mean, cov = model(Xtest.double(), full_cov=True)
-            sd = cov.diag().sqrt()  # standard deviation at each input point x
-            plt.plot(Xtest.numpy(), mean.numpy(), 'r', lw=2)  # plot the mean
-            plt.fill_between(Xtest.numpy(),  # plot the two-sigma uncertainty about the mean
-                            (mean - 2.0 * sd).numpy(),
-                            (mean + 2.0 * sd).numpy(),
-                            color='C0', alpha=0.3)
-            plt.legend(["Data", "GP Posterior Mean"])
-        if n_prior_samples > 0:  # plot samples from the GP prior
-            Xtest = torch.linspace(-0.5, 5.5, n_test)  # test inputs
-            noise = (model.noise if type(model) != gp.models.VariationalSparseGP
-                    else model.likelihood.variance)
-            cov = kernel.forward(Xtest) + noise.expand(n_test).diag()
-            samples = dist.MultivariateNormal(torch.zeros(n_test), covariance_matrix=cov)\
-                        .sample(sample_shape=(n_prior_samples,))
-            plt.plot(Xtest.numpy(), samples.numpy().T, lw=2, alpha=0.4)
+    # Get mean of all features
+    base_x = X_train_tensor.mean(dim=0).unsqueeze(0).repeat(n_test, 1)
 
-        plt.xlim(-4, 4)
-        plt.show()
+    # Vary one feature
+    x_range = torch.linspace(-4, 4, n_test)
+    base_x[:, feature_index] = x_range
+
+    # Predict
+    with torch.no_grad():
+        mean, cov = model(base_x, full_cov=True)
+        std = cov.diag().sqrt()
+
+    # Plot
+    plt.figure(figsize=(10, 5))
+    plt.plot(x_range.numpy(), mean.numpy(), 'r', label="GP Posterior Mean")
+    plt.fill_between(x_range.numpy(),
+                    (mean - 2 * std).numpy(),
+                    (mean + 2 * std).numpy(),
+                    alpha=0.3, color='C0', label="±2σ")
+    # Also plot training data for this feature
+    plt.scatter(X_train_tensor[:, feature_index].numpy(),
+                y_train_tensor.numpy(), color='k', s=10, label="Train Data", alpha=0.5)
+
+    plt.title(f"GP Posterior Mean vs '{feature_name}' (others fixed at mean)")
+    plt.xlabel(f"{feature_name} (standardized)")
+    plt.ylabel("Standardized log price")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 # initialize the kernel, likelihood, and model
 pyro.clear_param_store()
@@ -170,4 +173,4 @@ num_steps = 1500
 losses = gp.util.train(vsgp, num_steps=num_steps)
 plt.plot(losses)
 plt.show()
-plot(model=vsgp, plot_observed_data=True, plot_predictions=True)
+plot_gp_along_feature(model=vsgp, plot_observed_data=True, plot_predictions=True)

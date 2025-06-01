@@ -68,10 +68,7 @@ y_train = scaler.fit_transform(log_train_price).flatten()
 y_test = scaler.transform(log_test_price).flatten()
 
 
-
 #CELL 2 
-
-
 
 X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
 y_train_tensor = torch.tensor(y_train, dtype=torch.float32)
@@ -84,10 +81,10 @@ input_dim = X_train_tensor.shape[1]
 kernel = gp.kernels.RBF(input_dim=input_dim)
 kernel.lengthscale = torch.nn.Parameter(torch.ones(input_dim)*0.5)  # Enable ARD
 
-likelihood = gp.likelihoods.Gaussian(variance=torch.tensor(0.1))  # Try 0.01, 0.1, 1.0
+likelihood = gp.likelihoods.Gaussian()
 
 # Select inducing points from training data only
-M = 500
+M = 300
 kmeans = KMeans(n_clusters=M).fit(X_train)
 Xu = torch.tensor(kmeans.cluster_centers_, dtype=torch.float32)
 
@@ -101,21 +98,16 @@ vsgp = gp.models.VariationalSparseGP(
     jitter=1e-1
 )
 
-
-
 #CELL 3 
 
-
-
-
 # Train model
-losses = gp.util.train(vsgp, num_steps=2000)
+
+losses = gp.util.train(vsgp, num_steps=1500)
 plt.plot(losses)
 plt.title("ELBO Loss (Sparse GP on Standardized Log-Price)")
 plt.xlabel("Iteration")
 plt.ylabel("Loss")
 plt.show()
-
 
 #Cell 4 Predict and plot
 
@@ -151,7 +143,7 @@ plt.plot([true_price.min(), true_price.max()],
          'k--', label="Perfect Prediction")
 plt.xlabel("True Price")
 plt.ylabel("Predicted Price (exp GP mean)")
-plt.title("GP Predicted Price vs True Price (TEST SET)")
+plt.title("GP Predicted Price vs True Price (Test set)")
 plt.legend()
 plt.grid(True)
 plt.show()
@@ -169,6 +161,7 @@ plt.show()
 
 # ── MAE ──
 mae = mean_absolute_error(true_price, pred_price)
+
 
 # Scatter plot with MAE
 plt.figure(figsize=(8,6))
@@ -190,11 +183,9 @@ import numpy as np
 
 rmse = np.sqrt(mean_squared_error(true_price, pred_price))
 r2 = r2_score(true_price, pred_price)
-
+print("MAE:",mae)
 print(f"RMSE: {rmse:.2f}")
 print(f"R²: {r2:.4f}")
-
-
 
 # ── ARD relevance ──
 lengthscales = kernel.lengthscale.detach().cpu().numpy().flatten()
