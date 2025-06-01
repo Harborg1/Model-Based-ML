@@ -5,14 +5,14 @@
 
 # ## Imports
 
-# In[1]:
+# In[88]:
 
 
 # Uncomment the next line and run the cell to install Pyro for Jupyter Notebook:
 #!pip install pyro-ppl
 
 
-# In[2]:
+# In[89]:
 
 
 import numpy as np
@@ -29,7 +29,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-# In[3]:
+# In[90]:
 
 
 """Command to create a python file of the notebook (change path as needed):"""""
@@ -38,15 +38,14 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 # # Data: Description, Preprocessing, and Analysis
 
-# In[4]:
-
+# In[91]:
 
 # Loading the data and inspect the first rows
 df = pd.read_csv('csv_files\car_price_prediction.csv')
 df.head()
 
 
-# In[5]:
+# In[92]:
 
 
 # Inspect the dataset: we start with the shape of the dataset, columns, and types
@@ -55,14 +54,14 @@ print("Columns and Types:")
 print(df.dtypes)
 
 
-# In[6]:
+# In[93]:
 
 
 #check for duplications
 df.duplicated().sum()
 
 
-# In[7]:
+# In[94]:
 
 
 # we will drop duplications and check for missing values
@@ -70,7 +69,7 @@ df.drop_duplicates(inplace= True)
 df.isnull().sum()
 
 
-# In[8]:
+# In[95]:
 
 
 # Number of columns per row in the plot grid
@@ -110,20 +109,21 @@ for j in range(i+1, len(axes)):
 plt.tight_layout()
 fig.savefig(r'images\histograms_dataframe.png', bbox_inches='tight')
 plt.show()
+plt.close()
 
 
 # As expected, there are many values that need preprocessing, and we can also ignore some features that we believe that do not have influence over the price (e.g. Steering wheels side, color and ID). Other features need to be treated differently: for example, milage contains the string "KM". This should be removed and the values should contain only the numerical value. Other features such as engine volume, contain some additional information about the engine like "turbo" - which we will split into another binary feature that will contain values 0 or 1 for whether the engine is a turbo engine (0 if not, else 1). Additionally, many of the features are categorical, hence we will use one-hot encoding or ordinal encoding to fix them and fit them to a regression model.
 # 
 # Another desicion is to drop the attribute "model". This is due to high cardinality, as we have 1590 unique values (see the list below). Moreover, the "model" feature can be captured by other features of the car. i.e. the common sense is saying that the model is a major factor in the price, however, we believe that the rest of the features will capture the quality of a certain model (e.g. engine volume, leather seats, number of airbags etc). 
 
-# In[9]:
+# In[96]:
 
 
 # Check the number of unique values of each column
 df.nunique()
 
 
-# In[10]:
+# In[97]:
 
 
 # Drop irrelevant columns -4 columns
@@ -137,7 +137,7 @@ df_cleaned['Levy'] = pd.to_numeric(df_cleaned['Levy'], errors='coerce')
 df_cleaned['Leather interior'] = df_cleaned['Leather interior'].map({'Yes': 1, 'No': 0})
 
 
-# In[11]:
+# In[98]:
 
 
 #check the unique values and additional strings in engine volume
@@ -145,7 +145,7 @@ engine_volume_values = df_cleaned['Engine volume'].unique()
 sorted(engine_volume_values)
 
 
-# In[12]:
+# In[99]:
 
 
 # Create 'Turbo' binary column
@@ -155,7 +155,7 @@ df_cleaned['Turbo'] = df_cleaned['Engine volume'].str.contains('Turbo').astype(i
 df_cleaned['Engine volume'] = df_cleaned['Engine volume'].str.replace(' Turbo', '', regex=False).astype(float)
 
 
-# In[13]:
+# In[100]:
 
 
 #Drop 'Fuel type'
@@ -179,7 +179,7 @@ df_cleaned.head()
 print(df_cleaned.columns)
 
 
-# In[14]:
+# In[101]:
 
 
 # Number of columns per row in the plot grid
@@ -219,16 +219,17 @@ for j in range(i+1, len(axes)):
 plt.tight_layout()
 fig.savefig(r'images\histograms_dataframe_cleaned.png', bbox_inches='tight')
 plt.show()
+plt.close()
 
 
-# In[15]:
+# In[102]:
 
 
 print("Descriptive Statistics:")
 df_cleaned.describe().T
 
 
-# In[16]:
+# In[103]:
 
 
 # Select only numerical columns
@@ -253,11 +254,12 @@ for j in range(i + 1, len(axes)):
 plt.tight_layout()
 fig.savefig(r'images\boxplots.png', bbox_inches='tight')
 plt.show()
+plt.close()
 
 
 # It looks like the data for the price and mileage, Levy and age, got some outliers the influence the distribution. We will inspect the prices further:
 
-# In[17]:
+# In[104]:
 
 
 print(df_cleaned['Price'].describe())
@@ -272,13 +274,13 @@ upper_bound = Q3 + 1.5 * IQR
 print("Upper bound:", upper_bound)
 
 
-# In[18]:
+# In[105]:
 
 
 print(f"Number of entries: {len(df_cleaned[df_cleaned['Price'] > 50000])}")
 
 
-# In[19]:
+# In[106]:
 
 
 print(f"Number of entries: {len(df_cleaned[df_cleaned['Price'] < 2000])}")
@@ -286,13 +288,13 @@ print(f"Number of entries: {len(df_cleaned[df_cleaned['Price'] < 2000])}")
 
 # There are 908 records of cars that their price is greater than 50,000. Also, 3,141 cars that are priced under 2,000. We will drop them, and plot the price distribution again:
 
-# In[20]:
+# In[107]:
 
 
 df_cleaned = df_cleaned[(df_cleaned['Price'] >= 2000) & (df_cleaned['Price'] <= 50000)]
 
 
-# In[21]:
+# In[108]:
 
 
 # Plot without those extreme prices
@@ -306,7 +308,7 @@ plt.show()
 
 # Due to heavy skewness of the prices, we will try to plot the distribution in it's log-values. It might help us later in the baseline model, to improve linearity between the predicted variable and the predictors.
 
-# In[22]:
+# In[109]:
 
 
 plt.figure(figsize=(8,4))
@@ -317,7 +319,7 @@ plt.title('Log-Transformed Distribution of Car Price')
 plt.show()
 
 
-# In[23]:
+# In[110]:
 
 
 #we do the same for mileage:
@@ -333,19 +335,19 @@ print("upper bound: ", Q3 + 1.5 * IQR)
 
 # since the upper bound for mileage is 352,000, we will check for removing a reasonable number of recordings, to avoid removing to much rows:
 
-# In[24]:
+# In[111]:
 
 
 print(f"Number of entries: {len(df_cleaned[df_cleaned['Mileage'] > 370000])}")
 
 
-# In[25]:
+# In[112]:
 
 
 df_cleaned = df_cleaned[df_cleaned['Mileage'] <= 370000]
 
 
-# In[26]:
+# In[113]:
 
 
 lower = df_cleaned['Mileage'].quantile(0.005)
@@ -360,7 +362,7 @@ plt.tight_layout()
 plt.show()
 
 
-# In[27]:
+# In[114]:
 
 
 plt.figure(figsize=(8,4))
@@ -371,7 +373,7 @@ plt.title('Log-Transformed Distribution of Car Mileage')
 plt.show()
 
 
-# In[28]:
+# In[115]:
 
 
 # another check for our features and missing values:
@@ -385,14 +387,14 @@ df_cleaned.isnull().sum()
 
 # We can still see some missing values for the Levy. Levy generally refers to a tax or fee imposed by the government based on characteristics of the vehicle. Levy is influenced by the cars features like engine volume, age, vehicle type etc. We will impute missing data for levy based on engine volume and category - we will find the median value for engine volume and category and fill the missing levy based on this value.
 
-# In[29]:
+# In[116]:
 
 
 group_medians = df_cleaned.groupby(['Engine volume', 'Category'])['Levy'].median()
 group_medians.isnull().sum()
 
 
-# In[30]:
+# In[117]:
 
 
 #Since there are some in group_median that are NaN, 
@@ -404,7 +406,7 @@ print("Number of engine_volume_medians NaNs: ", engine_volume_medians.isnull().s
 global_median_levy = df_cleaned['Levy'].median()
 
 
-# In[31]:
+# In[118]:
 
 
 def impute_levy(row):
@@ -422,7 +424,7 @@ def impute_levy(row):
     return row['Levy']
 
 
-# In[32]:
+# In[119]:
 
 
 # applying the imputation
@@ -431,7 +433,7 @@ def impute_levy(row):
 df_cleaned['Levy'] = df_cleaned.apply(impute_levy, axis=1)
 
 
-# In[33]:
+# In[120]:
 
 
 # Checking again for missing values after the data cleansing
@@ -440,7 +442,7 @@ df_cleaned.isnull().sum()
 
 # Now it looks like we are done with the missing values. We will proceed with outliers clean up:
 
-# In[34]:
+# In[121]:
 
 
 columns_to_check = ['Levy', 'Engine volume', 'Airbags', 'Cylinders', 'Age']
@@ -461,7 +463,7 @@ for col in columns_to_check:
 
 # It doesn't look like much outliers. We can remove them, except Cylinders, that we will clean a certain and logical range:
 
-# In[35]:
+# In[122]:
 
 
 df_cleaned = df_cleaned[df_cleaned['Levy'] <= 1584]
@@ -470,7 +472,7 @@ df_cleaned = df_cleaned[(df_cleaned['Cylinders'] >= 2) & (df_cleaned['Cylinders'
 df_cleaned = df_cleaned[(df_cleaned['Age'] >= 2) & (df_cleaned['Age'] <= 26)]
 
 
-# In[36]:
+# In[123]:
 
 
 df_baseline = df_cleaned.copy()
@@ -483,7 +485,7 @@ df_baseline = df_cleaned.copy()
 # * **Gear-Box Type** - We will check whether to use dummy variables or ordinal values.
 # * **Drive Wheels** - We will check whether to use dummy variables or ordinal values.
 
-# In[37]:
+# In[124]:
 
 
 # before proceeding to the last 3 variables, we'll check if there is some correlation between the price
@@ -511,6 +513,7 @@ axes[2].tick_params(axis='x', rotation=45)
 plt.tight_layout()
 fig.savefig(r'images\categorical_vars.png', bbox_inches='tight')
 plt.show()
+plt.close()
 
 
 # The three bar plots above show the average car price for each category within the variables Category, Gear box type, and Drive wheels. These plots reveal the patterns in how these features relate to the target variable (Price):
@@ -523,7 +526,7 @@ plt.show()
 # 
 # Given these ordered relationships with price, it's appropriate to encode these Category and Gear box type variables as ordinal values, rather than one-hot encoding. For Drive wheels we will use one-hot encoding since the price differences are not that significant. This approach reduces dimensionality while preserving the underlying value hierarchy these features represent.
 
-# In[38]:
+# In[125]:
 
 
 # Rank encoding for Category
@@ -543,7 +546,7 @@ df_baseline = pd.concat([df_baseline, drive_dummies], axis=1)
 
 # We will check correlations again, now that the data is fully ready:
 
-# In[39]:
+# In[126]:
 
 
 numeric_cols = df_baseline.select_dtypes(include=['float64', 'int64', 'int32','int64']).columns
@@ -569,9 +572,10 @@ plt.tight_layout()
 plt.suptitle('Scatter Plots: Price vs Other Features', fontsize=16, y=1.02)
 fig.savefig(r'images\correlation_plots.png', bbox_inches='tight')
 plt.show()
+plt.close()
 
 
-# In[40]:
+# In[127]:
 
 
 numeric_data = df_baseline.select_dtypes(include=[np.number])
@@ -599,6 +603,7 @@ plt.title("Correlation Matrix of Numeric Features", fontsize=16)
 plt.tight_layout()
 fig.savefig(r'images\correlation_heat_plot.png', bbox_inches='tight')
 plt.show()
+plt.close()
 
 
 # #### Key insights:
@@ -609,7 +614,7 @@ plt.show()
 # 
 # * Engine volume and Cylinders are strongly correlated (0.64). This is logical, as bigger engines usually have more cylinders.
 
-# In[41]:
+# In[128]:
 
 
 # Define features and target
@@ -665,7 +670,7 @@ plt.show()
 
 # Now that we are done analyzing and processing the data, we can save it to a .csv file.
 
-# In[42]:
+# In[129]:
 
 
 #Save the df_baseline to a .csv file
@@ -676,7 +681,7 @@ df_baseline.to_csv("csv_files\df_baseline.csv", index=False)
 
 # Now that the data is processed, and analyzed, we can introduce the first model for this project, Ridge regression. This model will serve as a baseline reference for the next models that we will introduce.
 
-# In[43]:
+# In[130]:
 
 
 # we drop redundant original categorical columns + 1 dummy to avoid multicollinearity
@@ -707,7 +712,7 @@ median_bin = X_train['Manufacturer_encoded'].astype(int).median()
 X_test['Manufacturer_encoded'].fillna(median_bin, inplace=True)
 
 
-# In[44]:
+# In[131]:
 
 
 # Drop original 'Manufacturer' after encoding
@@ -727,7 +732,7 @@ X_test[to_scale] = scaler.transform(X_test[to_scale])
 print("X_train shape:", X_train.shape)
 
 
-# In[45]:
+# In[132]:
 
 
 # Initialize and fit Ridge Regression
@@ -745,7 +750,7 @@ y_pred_train_actual = np.expm1(y_pred_train)
 y_pred_test_actual = np.expm1(y_pred_test)
 
 
-# In[46]:
+# In[133]:
 
 
 # we will define an evaluation function
@@ -757,7 +762,7 @@ def evaluate(y_true, y_pred, label):
     print()
 
 
-# In[47]:
+# In[134]:
 
 
 # and show the model evaluation
@@ -765,7 +770,7 @@ evaluate(y_train_actual, y_pred_train_actual, "Training Set")
 evaluate(y_test_actual, y_pred_test_actual, "Test Set")
 
 
-# In[48]:
+# In[135]:
 
 
 # Print intercept
@@ -781,7 +786,7 @@ print("\nTop Coefficients:")
 print(coef_df.to_string(index=False))
 
 
-# In[49]:
+# In[136]:
 
 
 # Lastly we plot predictions vs true values
@@ -794,6 +799,7 @@ plt.title("Ridge Regression: Predicted vs True (Test Set)")
 plt.tight_layout()
 fig.savefig(r'images\true_vs_pred_Ridge_baseline.png', bbox_inches='tight')
 plt.show()
+plt.close()
 
 
 # #### Key insights
@@ -807,7 +813,7 @@ plt.show()
 
 # We will try to create another model that considers the top 6 features from the MI chart:
 
-# In[50]:
+# In[137]:
 
 
 # Select top MI features from already-prepared X_train and X_test
@@ -834,7 +840,7 @@ print("R²:", r2_score(y_test_actual, y_pred_actual))
 
 # We will try to create another model that considers the top 6 correlated (in absolut values) features from heatmap chart:
 
-# In[51]:
+# In[138]:
 
 
 correlated_features = ['Age', 'Manufacturer_encoded', 'Category_encoded',
@@ -866,7 +872,7 @@ print("R²:", r2_score(y_test_actual_corr, y_pred_actual_corr))
 
 # First Model PGM
 
-# In[52]:
+# In[139]:
 
 
 import pandas as pd
@@ -878,7 +884,7 @@ import torch
 
 
 
-# In[53]:
+# In[140]:
 
 
 df_pgm1 = df_cleaned.copy()
@@ -887,7 +893,7 @@ df_pgm1.info()
 
 # Data preparation
 
-# In[54]:
+# In[141]:
 
 
 from sklearn.preprocessing import StandardScaler
@@ -912,7 +918,7 @@ y_scaled = y/1000
 
 # Get train and test set
 
-# In[55]:
+# In[142]:
 
 
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_scaled, test_size=0.2)
@@ -925,7 +931,7 @@ print("X_train shape:", y_train.shape)
 
 # Define a model
 
-# In[56]:
+# In[143]:
 
 
 # Linear Bayesian model y= X.w + bias + sigma
@@ -943,7 +949,7 @@ def linear_bayesian_model(X,y=None):
     return obs
 
 
-# In[57]:
+# In[144]:
 
 
 from pyro.contrib.autoguide import AutoDiagonalNormal, AutoMultivariateNormal, AutoNormal
@@ -984,7 +990,7 @@ for step in range(n_steps):
 
 # Evaluate overfitting 
 
-# In[58]:
+# In[145]:
 
 
 plt.plot(train_elbos, label="Train ELBO")
@@ -996,7 +1002,7 @@ plt.title("ELBO during training")
 plt.show()
 
 
-# In[59]:
+# In[146]:
 
 
 #X.columns
@@ -1020,7 +1026,7 @@ print(f"Biais learned : {latent['bias'].item():.4f}")
 #print(f"Sigma learned : {latent['sigma'].item():.4f}")
 
 
-# In[60]:
+# In[147]:
 
 
 import matplotlib.pyplot as plt
@@ -1051,7 +1057,7 @@ plt.grid(True)
 plt.show()
 
 
-# In[61]:
+# In[148]:
 
 
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
@@ -1073,7 +1079,7 @@ print("Y_pred:", y_pred_np)
 
 # PGM
 
-# In[62]:
+# In[149]:
 
 
 import matplotlib.pyplot as plt
@@ -1087,7 +1093,7 @@ plt.show()
 
 # Data process
 
-# In[63]:
+# In[150]:
 
 
 print(X_scaled.columns)
@@ -1106,7 +1112,7 @@ columns_status = ['Leather interior', 'Category_Cabriolet', 'Category_Coupe',
 
 
 
-# In[64]:
+# In[151]:
 
 
 X_scaled_model2 =X_scaled.copy()
@@ -1138,7 +1144,7 @@ y_train = torch.tensor(y_train.values, dtype=torch.float32)
 y_test = torch.tensor(y_test.values, dtype=torch.float32)
 
 
-# In[65]:
+# In[152]:
 
 
 import pyro.distributions
@@ -1193,7 +1199,7 @@ def model2(X_quality, X_performance, X_status, X_seniority, y=None):
     return obs
 
 
-# In[66]:
+# In[153]:
 
 
 from pyro.contrib.autoguide import AutoDiagonalNormal, AutoMultivariateNormal, AutoNormal
@@ -1232,7 +1238,7 @@ for step in range(n_steps):
         print("[%d] ELBO: %.1f" % (step, elbo))
 
 
-# In[67]:
+# In[154]:
 
 
 plt.plot(train_elbos, label="Train ELBO")
@@ -1268,7 +1274,7 @@ for name, w in zip(columns_seniority, weights_seniority):
 #print(f"Sigma learned : {latent['sigma'].item():.4f}")
 
 
-# In[68]:
+# In[155]:
 
 
 import matplotlib.pyplot as plt
@@ -1276,7 +1282,7 @@ import seaborn as sns
 import torch
 from pyro.infer import Predictive
 
-predictive = Predictive(model2, guide=guide, num_samples=1000)
+predictive = Predictive(model2, guide=guide, num_samples=5000)
 samples = predictive(X_test_quality, X_test_performance, X_test_status, X_test_seniority)
 
 # Moyenne des prédictions (shape: [batch_size])
@@ -1299,7 +1305,7 @@ plt.grid(True)
 plt.show()
 
 
-# In[69]:
+# In[156]:
 
 
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
@@ -1319,10 +1325,11 @@ print("Y_pred:", y_pred_np)
 # # Gaussian Process with ARD
 # This section implements a Variational Sparse Gaussian Process (GP) with Automatic Relevance Determination (ARD) to predict used car prices, using an RBF kernel and sparse inducing points. We train the model, evaluate on a test set, visualize predictions, and analyze feature relevance via ARD lengthscales.
 
-# In[4]:
+# In[157]:
 
 
 # Additional imports for Gaussian Process
+plt.close('all')
 import torch
 import numpy as np
 import pyro
@@ -1344,7 +1351,7 @@ df = pd.read_csv(r'csv_files\df_baseline.csv')
 
 # Data Preparation (Train-Test Split, Standardization)
 
-# In[ ]:
+# In[158]:
 
 
 # Define columns
@@ -1405,18 +1412,20 @@ y_test = scaler.transform(log_test_price).flatten()
 
 # Gaussian Process Model Setup
 
-# In[7]:
+# In[159]:
 
 
-# Convert data to tensors
+#Convert data to tensors
 X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
 y_train_tensor = torch.tensor(y_train, dtype=torch.float32)
+
 X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
 
 # GP setup
+pyro.clear_param_store()
 input_dim = X_train_tensor.shape[1]
 kernel = gp.kernels.RBF(input_dim=input_dim)
-kernel.lengthscale = torch.nn.Parameter(torch.ones(input_dim))  # Enable ARD
+kernel.lengthscale = torch.nn.Parameter(torch.ones(input_dim)*0.5)  # Enable ARD
 
 likelihood = gp.likelihoods.Gaussian()
 
@@ -1438,23 +1447,31 @@ vsgp = gp.models.VariationalSparseGP(
 
 # Training the GP
 
-# In[ ]:
+# In[160]:
 
 
 # Train model
 losses = gp.util.train(vsgp, num_steps=1500)
 
-# Plot ELBO loss
+
+# ELBO loss
+
+# In[161]:
+
+
+fig = plt.figure(figsize=(7, 6))
 plt.plot(losses)
-plt.title("ELBO Loss (Sparse GP on Standardized Log-Price)")
+plt.title("ELBO Loss")
 plt.xlabel("Iteration")
 plt.ylabel("Loss")
+fig.savefig(r'images\GP\ELBO.png', bbox_inches='tight')
 plt.show()
+plt.close()
 
 
-# Preditions
+# Predictions
 
-# In[9]:
+# In[162]:
 
 
 # Predict on TEST set
@@ -1479,12 +1496,12 @@ pred_price_lower = np.exp(pred_mean_unscaled - 2 * pred_sd_unscaled)
 true_price = np.exp(scaler.inverse_transform(y_test.reshape(-1, 1)).squeeze())
 
 
-# Error Bars of predition vs true price
+# Plot of prediction vs true price
 
-# In[ ]:
+# In[163]:
 
 
-plt.figure(figsize=(10, 6))
+fig = plt.figure(figsize=(7, 6))
 plt.errorbar(true_price, pred_price, 
              yerr=[(pred_price - pred_price_lower), 
                    (pred_price_upper - pred_price)], 
@@ -1493,37 +1510,38 @@ plt.plot([true_price.min(), true_price.max()],
          [true_price.min(), true_price.max()], 
          'k--', label="Perfect Prediction")
 plt.xlabel("True Price")
-plt.ylabel("Predicted Price (exp GP mean)")
+plt.ylabel("Predicted Price")
 plt.title("GP Predicted Price vs True Price (Test Set)")
 plt.legend()
 plt.grid(True)
+fig.savefig(r'images\GP\GP_pred_vs_true.png', bbox_inches='tight')
 plt.show()
+plt.close()
 
 
 # Residuals vs True Price
 
-# In[11]:
+# In[164]:
 
 
+fig = plt.figure(figsize=(7, 6))
 residuals = true_price - pred_price
-plt.figure(figsize=(8,5))
 plt.scatter(true_price, residuals, alpha=0.25)
 plt.axhline(0, ls='--', lw=1)
 plt.xlabel("True price")
 plt.ylabel("Residual (True − Pred)")
 plt.title("Residuals vs. True Price (Test Set)")
 plt.grid(True)
+fig.savefig(r'images\GP\residuals_GP.png', bbox_inches='tight')
 plt.show()
+plt.close()
 
 
-# Mean Absolute Error
-
-# In[12]:
+# In[165]:
 
 
+fig = plt.figure(figsize=(7, 6))
 mae = mean_absolute_error(true_price, pred_price)
-
-plt.figure(figsize=(8,6))
 plt.scatter(true_price, pred_price, alpha=0.3, label='Predictions')
 plt.plot([true_price.min(), true_price.max()], 
          [true_price.min(), true_price.max()], 
@@ -1534,33 +1552,284 @@ plt.title("GP Predicted Price vs True Price (Test Set)\nMAE = {:.2f}".format(mae
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
+fig.savefig(r'images\GP\MAE.png', bbox_inches='tight')
 plt.show()
+plt.close()
 
 
-# RMSE and R-Squared
+# MAE,RMSE and R-Squared
 
-# In[ ]:
+# In[166]:
 
 
 from sklearn.metrics import mean_squared_error, r2_score
 import numpy as np
-
 rmse = np.sqrt(mean_squared_error(true_price, pred_price))
 r2 = r2_score(true_price, pred_price)
 
+print("MAE:",mae)
 print(f"RMSE: {rmse:.2f}")
 print(f"R²: {r2:.4f}")
 
 
 # ARD Feature Relevance Analysis
 
-# In[ ]:
+# In[167]:
 
 
 lengthscales = kernel.lengthscale.detach().cpu().numpy().flatten()
 relevance = 1 / lengthscales
 
-print("\nFeature relevance via ARD (lower lengthscale = more relevant):")
+print("\nFeature relevance via ARD")
 for feat, score in sorted(zip(feature_cols, relevance), key=lambda x: -x[1]):
     print(f"{feat:20s}  relevance: {score:.4f}")
+
+
+# Now that we have made the Gaussian proces, we want to see if we can improve the results by adding an neural network that learns relationships about the 
+# input features before they are used for training and testing.
+
+# Setup the model
+
+# In[ ]:
+
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+pyro.clear_param_store()
+
+# MLP feature extractor
+class MLPFeatureExtractor(nn.Module):
+    def __init__(self, input_dim, hidden_dim=32, output_dim=len(feature_cols)):
+        super().__init__()
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, output_dim)
+
+    def forward(self, x):
+        return self.fc2(F.relu(self.fc1(x)))
+
+
+output_dim = len(feature_cols)
+feature_net = MLPFeatureExtractor(input_dim=X_train_tensor.shape[1])
+
+# Custom kernel wrapper
+class FeatureTransformedKernel(gp.kernels.Kernel):
+    def __init__(self, base_kernel, feature_net, output_dim):
+        super().__init__(input_dim=output_dim)
+        self.base_kernel = base_kernel
+        self.feature_net = feature_net
+        self.name = "FeatureTransformedKernel"
+
+    def forward(self, X, Z=None, diag=False):
+        X_feat = self.feature_net(X)
+        Z_feat = self.feature_net(Z) if Z is not None else None
+        return self.base_kernel(X_feat, Z_feat, diag=diag)
+
+pyro.clear_param_store()
+
+# RBF kernel with ARD
+base_kernel = gp.kernels.RBF(input_dim=output_dim, lengthscale=torch.ones(output_dim))
+kernel = FeatureTransformedKernel(base_kernel, feature_net, output_dim)
+likelihood = gp.likelihoods.Gaussian()
+
+# Select inducing points (raw feature space, not transformed)
+M = 300
+kmeans = KMeans(n_clusters=M).fit(X_train)
+Xu_np = kmeans.cluster_centers_
+Xu_tensor = torch.tensor(Xu_np, dtype=torch.float32)
+
+# Do not transform Xu_tensor — let the GP handle it via the kernel
+vsgp = gp.models.VariationalSparseGP(
+    X_train_tensor, y_train_tensor,
+    kernel, Xu=Xu_tensor,
+    likelihood=likelihood, whiten=True, jitter=1e-1
+)
+
+
+
+
+# Train the model
+
+# In[169]:
+
+
+fig = plt.figure(figsize=(7, 6))
+# Train
+losses = gp.util.train(vsgp, num_steps=1500)
+plt.plot(losses)
+plt.title("ELBO Loss (Deep Kernel GP)")
+plt.xlabel("Iteration")
+plt.ylabel("Loss")
+fig.savefig(r'images\GP\ELBO_Deep_Kernel_GP.png', bbox_inches='tight')
+plt.show()
+plt.close()
+
+
+# Plot true price vs. predicted price with uncertainty bounds
+
+# In[170]:
+
+
+fig = plt.figure(figsize=(7, 6))
+# Predict
+with torch.no_grad():
+    pred_mean, pred_var = vsgp(X_test_tensor, full_cov=False)
+
+pred_mean_unscaled = scaler.inverse_transform(pred_mean.unsqueeze(-1)).squeeze()
+pred_sd_unscaled = pred_var.sqrt().unsqueeze(-1).numpy() * scaler.scale_[0]
+
+pred_mean_unscaled = np.array(pred_mean_unscaled)
+
+pred_price = np.exp(pred_mean_unscaled)
+pred_price_upper = np.exp(pred_mean_unscaled + 2 * pred_sd_unscaled.squeeze())
+pred_price_lower = np.exp(pred_mean_unscaled - 2 * pred_sd_unscaled.squeeze())
+true_price = np.exp(scaler.inverse_transform(y_test.reshape(-1, 1)).squeeze())
+
+plt.figure(figsize=(10, 6))
+plt.errorbar(true_price, pred_price, yerr=[pred_price - pred_price_lower, pred_price_upper - pred_price], fmt='o', alpha=0.4, label="Predicted ±2σ")
+plt.plot([true_price.min(), true_price.max()], [true_price.min(), true_price.max()], 'k--', label="Perfect Prediction")
+plt.xlabel("True Price")
+plt.ylabel("Predicted Price")
+plt.title("Deep Kernel GP: Predicted vs True Price (Test Set)")
+plt.legend()
+plt.grid(True)
+fig.savefig(r'images\GP\true_vs_pred_price_with_uncertainty.png', bbox_inches='tight')
+plt.show()
+
+
+# In[171]:
+
+
+# Scatter plot with MAE
+fig = plt.figure(figsize=(7, 6))
+mae = mean_absolute_error(true_price, pred_price)
+plt.figure(figsize=(8,6))
+plt.scatter(true_price, pred_price, alpha=0.3, label='Predictions')
+plt.plot([true_price.min(), true_price.max()],
+         [true_price.min(), true_price.max()],
+         'k--', label='Perfect Prediction')
+plt.xlabel("True Price")
+plt.ylabel("Predicted Price")
+plt.title("GP Predicted Price vs True Price (Test Set)\nMAE = {:.2f}".format(mae))
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+fig.savefig(r'images\GP\true_vs_pred_price_MAE.png', bbox_inches='tight')
+plt.show()
+plt.close()
+
+
+# Plot residuals
+
+# In[ ]:
+
+
+fig = plt.figure(figsize=(7, 6))
+residuals = true_price - pred_price
+plt.scatter(true_price, residuals, alpha=0.25)
+plt.axhline(0, ls='--', lw=1)
+plt.xlabel("True price")
+plt.ylabel("Residual (True − Pred)")
+plt.title("Residuals vs. True Price")
+plt.grid(True)
+fig.savefig(r'images\GP\residuals_deep_GP.png', bbox_inches='tight')
+plt.show()
+plt.close()
+
+mae = mean_absolute_error(true_price, pred_price)
+rmse = np.sqrt(mean_squared_error(true_price, pred_price))
+r2 = r2_score(true_price, pred_price)
+
+
+# MAE, RMSE and R^2
+
+# In[173]:
+
+
+rmse = np.sqrt(mean_squared_error(true_price, pred_price))
+r2 = r2_score(true_price, pred_price)
+
+print(f"MAE: {mae:.2f}")
+print(f"RMSE: {rmse:.2f}")
+print(f"R²: {r2:.4f}")
+
+
+# ARD relevance
+
+# In[174]:
+
+
+lengthscales = base_kernel.lengthscale.detach().cpu().numpy().flatten()
+relevance = 1 / lengthscales
+
+print("Feature relevance by original input feature (via ARD):")
+for feat, score in sorted(zip(feature_cols, relevance), key=lambda x: -x[1]):
+    print(f"{feat:15s}  relevance: {score:.4f}")
+
+
+
+# Gaussian Posterior Mean (1 dimensional analysis where Mileage is kept and all other input features are assigned to their respective mean)
+
+# In[175]:
+
+
+def plot(model, feature_index=2, X_train_tensor=None, y_train_tensor=None, n_test=500, scaler=None, num_points=200):
+    """
+    Plot GP posterior mean and uncertainty along a single feature index,
+    keeping other features fixed at their mean. Shows actual price.
+    Limits training data plot to num_points for clarity.
+    """
+    assert X_train_tensor is not None and y_train_tensor is not None and scaler is not None
+
+    # Create test inputs: all features = mean
+    X_base = X_train_tensor.mean(dim=0).repeat(n_test, 1)
+
+    # Vary only one feature
+    x_range = torch.linspace(-4, 4, n_test)
+    X_base[:, feature_index] = x_range
+
+    # Predict
+
+    with torch.no_grad():
+        mean, cov = model(X_base, full_cov=True)
+        std = cov.diag().sqrt()
+
+    # Undo standardization
+    mean_unscaled = scaler.inverse_transform(mean.unsqueeze(-1)).squeeze()
+    std_unscaled = std.numpy() * scaler.scale_[0]
+
+    # Undo log transform
+    price_pred = np.exp(mean_unscaled)
+    price_upper = np.exp(mean_unscaled + 2 * std_unscaled)
+    price_lower = np.exp(mean_unscaled - 2 * std_unscaled)
+
+    # Plot GP prediction
+    fig = plt.figure(figsize=(10, 6))
+    plt.plot(x_range.numpy(), price_pred, 'r', label=" GP Posterior Mean")
+    plt.fill_between(x_range.numpy(), price_lower, price_upper,
+                     alpha=0.3, color='C0', label='±2σ')
+
+    # Sample a few training points to plot
+    total_points = X_train_tensor.shape[0]
+    indices = torch.randperm(total_points)[:num_points]
+    x_sample = X_train_tensor[indices, feature_index].numpy()
+    y_sample = np.exp(scaler.inverse_transform(y_train_tensor[indices].unsqueeze(-1)).squeeze())
+
+    # Plot reduced training data
+    plt.scatter(x_sample, y_sample, color='k', s=20, label=f"data", alpha=0.7)
+
+    plt.xlabel(f"Mileage (standardized)")
+    plt.ylabel("Predicted Price ")
+    plt.title(f"SE kernel")
+    plt.legend()
+    plt.grid(True)
+    fig.savefig(r'images\GP\Gaussian_Posterior_Mean.png', bbox_inches='tight')
+    plt.show()
+
+plot(model=vsgp,
+     feature_index=2,
+     X_train_tensor=X_train_tensor,
+     y_train_tensor=y_train_tensor,
+     scaler=scaler,
+     num_points=200)
 
