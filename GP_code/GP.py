@@ -195,3 +195,64 @@ print("\nFeature relevance via ARD (lower lengthscale = more relevant):")
 for feat, score in sorted(zip(feature_cols, relevance), key=lambda x: -x[1]):
     print(f"{feat:20s}  relevance: {score:.4f}")
 
+    
+def plot(model, feature_index=2, X_train_tensor=None, y_train_tensor=None, n_test=500, scaler=None, num_points=50):
+    """
+    Plot GP posterior mean and uncertainty along a single feature index,
+    keeping other features fixed at their mean. Shows actual price.
+    Limits training data plot to num_points for clarity.
+    """
+    assert X_train_tensor is not None and y_train_tensor is not None and scaler is not None
+
+    # Create test inputs: all features = mean
+    X_base = X_train_tensor.mean(dim=0).repeat(n_test, 1)
+    
+    # Vary only one feature
+    x_range = torch.linspace(-4,4, n_test)
+    X_base[:, feature_index] = x_range
+
+    # Predict
+
+    with torch.no_grad():
+        mean, cov = model(X_base, full_cov=True)
+        std = cov.diag().sqrt()
+
+    # Undo standardization
+    mean_unscaled = scaler.inverse_transform(mean.unsqueeze(-1)).squeeze()
+    std_unscaled = std.numpy() * scaler.scale_[0]
+
+    # Undo log transform
+    price_pred = np.exp(mean_unscaled)
+    price_upper = np.exp(mean_unscaled + 2 * std_unscaled)
+    price_lower = np.exp(mean_unscaled - 2 * std_unscaled)
+
+    # Plot GP prediction
+    plt.figure(figsize=(10, 6))
+    plt.plot(x_range.numpy(), price_pred, 'r', label=" GP Posterior Mean")
+    plt.fill_between(x_range.numpy(), price_lower, price_upper,
+                     alpha=0.3, color='C0', label='±2σ')
+    
+    # Sample a few training points to plot
+    total_points = X_train_tensor.shape[0]
+    indices = torch.randperm(total_points)[:num_points]
+    x_sample = X_train_tensor[indices, feature_index].numpy()
+    y_sample = np.exp(scaler.inverse_transform(y_train_tensor[indices].unsqueeze(-1)).squeeze())
+
+    # Plot reduced training data
+    plt.scatter(x_sample, y_sample, color='k', s=20, label=f"data", alpha=0.7)
+
+    plt.xlabel(f"Mileage (standardized)")
+    plt.ylabel("True Price ")
+    plt.title(f"SE kernel")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+plot(model=vsgp,
+     feature_index=2,
+     X_train_tensor=X_train_tensor,
+     y_train_tensor=y_train_tensor,
+     scaler=scaler,
+     num_points=500)
+
+
